@@ -71,16 +71,6 @@ Wird in der Konzeptionsphase festgelegt. Bestehende Open-Source-Bausteine wie GR
 Studentisches Projekt im Studiengang Wirtschaftsinformatik – Business Engineering an der [DHBW Ravensburg](https://www.dhbw-ravensburg.de) (Kurse WWIBE124 und WWIBE224).
 
 - **Auftraggeber:** Prof. Dr. Martin Zaefferer
-- **Koordination:** Prof. Dr. Frank R. Lehmann
-
-## Team
-
-| Name | Kurs | Rolle |
-|---|---|---|
-| Lukas Spraul | WWIBE124 | |
-| | | |
-| | | |
-| | | |
 
 ## Lizenz
 
