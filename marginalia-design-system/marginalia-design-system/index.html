@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marginalia · Design System</title>
+<meta name="description" content="Design System für ein Werkzeug, das Literaturverzeichnisse wissenschaftlicher Arbeiten prüft.">
+<link rel="stylesheet" href="tokens/tokens.css">
+<link rel="stylesheet" href="css/marginalia.css">
+<style>
+  .page { max-width: 1040px; margin: 0 auto; padding: 0 var(--space-4) var(--space-8); }
+  .top { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; padding: var(--space-3) 0; background: var(--paper); border-bottom: 1px solid var(--line); }
+  .top nav { display: flex; gap: var(--space-4); flex-wrap: wrap; align-items: center; }
+  .cover { margin: var(--space-6) 0 var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+  .intro { max-width: 68ch; margin: 0 0 var(--space-7); }
+  .intro p { margin: 0 0 var(--space-3); }
+  .group { margin-bottom: var(--space-7); }
+  .group > h2 { margin: 0 0 var(--space-5); padding-top: var(--space-5); border-top: 1px solid var(--line); }
+  .comp { margin-bottom: var(--space-6); }
+  .comp-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-3); }
+  .comp-head h3 { margin: 0 0 2px; }
+  .comp-head p { margin: 0; max-width: 60ch; }
+  .frame { border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; background: var(--paper); }
+  .frame iframe { display: block; width: 100%; border: 0; }
+  .frame.scaled { position: relative; }
+  .frame.scaled iframe { position: absolute; top: 0; left: 0; transform-origin: 0 0; width: auto; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-2) var(--space-4); margin: 0; padding: 0; list-style: none; }
+  .sw { display: grid; grid-template-columns: 32px 1fr; grid-template-rows: auto auto; column-gap: var(--space-3); align-items: center; }
+  .chip { grid-row: 1 / span 2; width: 32px; height: 32px; border-radius: var(--radius-md); box-shadow: inset 0 0 0 1px var(--line); }
+  .foot { padding-top: var(--space-5); border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <span class="mg-brand">Marginalia</span>
+    <nav aria-label="Dokumentation">
+      <a class="mg-link label" href="docs/brand-book.md">Gestaltungsregeln</a>
+      <a class="mg-link label" href="tokens/tokens.json">Tokens</a>
+      <a class="mg-link label" href="README.md">README</a>
+      <div class="mg-seg" role="group" aria-label="Theme">
+        <button class="mg-seg__item" data-theme-btn="light" aria-pressed="true">Papier</button>
+        <button class="mg-seg__item" data-theme-btn="dark" aria-pressed="false">Abend</button>
+      </div>
+    </nav>
+  </div>
+
+  <div class="cover frame scaled" data-w="960" data-h="288"><iframe src="docs/cover.html" title="Marginalia" width="960" height="288"></iframe></div>
+
+  <div class="intro">
+    <p class="body">Marginalia ist das Design System für ein Werkzeug, das Literaturverzeichnisse wissenschaftlicher Arbeiten prüft: Autoren, Jahr, Titel, Zeitschrift, Seiten und DOI werden mit Referenzquellen abgeglichen, fehlerhafte und fehlende Angaben markiert und Widersprüche zwischen Quellen sichtbar gemacht.</p>
+    <p class="body mg-muted">Warmes Papier statt grellem Weiß, Serifen für die Werke, eine leise Bedienung. Alle Komponenten sind reines CSS mit dem Präfix <code class="identifier">mg-</code>.</p>
+  </div>
+
+    <section class="group" aria-labelledby="g-Bedienung">
+      <h2 class="headline" id="g-Bedienung">Bedienung</h2>
+      <article class="comp" id="Button">
+        <header class="comp-head">
+          <div>
+            <h3 class="work-title">Button <span class="identifier mg-subtle">Button</span></h3>
+            <p class="body mg-muted">Löst eine Aktion aus; pro Bereich höchstens ein Primär-Button.</p>
+          </div>
+          <div class="mg-row comp-links">
+            <a class="mg-link label" href="components/Button/index.html">Einzeln öffnen</a>
+            <a class="mg-link label" href="components/Button/README.md">Richtlinien</a>
+          </div>
+        </header>
+        <div class="frame"><iframe src="components/Button/index.html" title="Button" height="136"></iframe></div>
+      </article>
+      <article class="comp" id="SegmentedControl">
+        <header class="comp-head">
+          <div>
+            <h3 class="work-title">Segmented Control <span class="identifier mg-subtle">SegmentedControl</span></h3>
+            <p class="body mg-muted">Filtert eine Liste nach Status; genau ein Segment ist aktiv.</p>
+          </div>
+          <div class="mg-row comp-links">
+            <a class="mg-link label" href="components/SegmentedControl/index.html">Einzeln öffnen</a>
+            <a class="mg-link label" href="components/SegmentedControl/README.md">Richtlinien</a>
+          </div>
+        </header>
+        <div class="frame"><iframe src="components/SegmentedControl/index.html" title="Segmented Control" height="84"></iframe></div>
+      </article>
+      <article class="comp" id="Input">
+        <header class="comp-head">
+          <div>
+            <h3 class="work-title">Eingabefeld <span class="identifier mg-subtle">Input</span></h3>
+            <p class="body mg-muted">Eingabefeld für bibliografische Angaben und die Suche.</p>
+          </div>
+          <div class="mg-row comp-links">
+            <a class="mg-link label" href="components/Input/index.html">Einzeln öffnen</a>
+            <a class="mg-link label" href="components/Input/README.md">Richtlinien</a>
+          </div>
+        </header>
+        <div class="frame"><iframe src="components/Input/index.html" title="Eingabefeld" height="196"></iframe></div>
+      </article>
+    </section>
+    <section class="group" aria-labelledby="g-Befunde">
+      <h2 class="headline" id="g-Befunde">Befunde</h2>
+      <article class="comp" id="StatusBadge">
+        <header class="comp-head">
+          <div>
+            <h3 class="work-title">Status-Badge <span class="identifier mg-subtle">StatusBadge</span></h3>
+            <p class="body mg-muted">Zeigt den Prüfstatus einer Quelle oder eines Feldes mit Icon und Wort.</p>
+          </div>
+          <div class="mg-row comp-links">
+            <a class="mg-link label" href="components/StatusBadge/index.html">Einzeln öffnen</a>
+            <a class="mg-link label" href="components/StatusBadge/README.md">Richtlinien</a>
+          </div>
+        </header>
+        <div class="frame"><iframe src="components/StatusBadge/index.html" title="Status-Badge" height="108"></iframe></div>
+      </article>
+      <article class="comp" id="CompletenessMeter">
+        <header class="comp-head">
+          <div>
+            <h3 class="work-title">Vollständigkeit <span class="identifier mg-subtle">CompletenessMeter</span></h3>
+            <p class="body mg-muted">Fasst den Zustand eines Literaturverzeichnisses als segmentierten Balken zusammen.</p>
+          </div>
+          <div class="mg-row comp-links">
+            <a class="mg-link label" href="components/CompletenessMeter/index.html">Einzeln öffnen</a>
+            <a class="mg-link label" href="components/CompletenessMeter/README.md">Richtlinien</a>
+          </div>
+        </header>
+        <div class="frame"><iframe src="components/CompletenessMeter/index.html" title="Vollständigkeit" height="148"></iframe></div>
+      </article>
+      <article class="comp" id="FieldCheck">
+        <header class="comp-head">
+          <div>
+            <h3 class="work-title">Feldprüfung <span class="identifier mg-subtle">FieldCheck</span></h3>
+            <p class="body mg-muted">Stellt die Felder eines Eintrags den Werten der Referenzquelle gegenüber.</p>
+          </div>
+          <div class="mg-row comp-links">
+            <a class="mg-link label" href="components/FieldCheck/index.html">Einzeln öffnen</a>
+            <a class="mg-link label" href="components/FieldCheck/README.md">Richtlinien</a>
+          </div>
+        </header>
+        <div class="frame"><iframe src="components/FieldCheck/index.html" title="Feldprüfung" height="416"></iframe></div>
+      </article>
+      <article class="comp" id="CitationNotes">
+        <header class="comp-head">
+          <div>
+            <h3 class="work-title">Zitat mit Randnotizen <span class="identifier mg-subtle">CitationNotes</span></h3>
+            <p class="body mg-muted">Das Rohzitat mit markierten Stellen und den Befunden als Randnotizen daneben — das namensgebende Muster.</p>
+          </div>
+          <div class="mg-row comp-links">
+            <a class="mg-link label" href="components/CitationNotes/index.html">Einzeln öffnen</a>
+            <a class="mg-link label" href="components/CitationNotes/README.md">Richtlinien</a>
+          </div>
+        </header>
+        <div class="frame"><iframe src="components/CitationNotes/index.html" title="Zitat mit Randnotizen" height="208"></iframe></div>
+      </article>
+    </section>
+    <section class="group" aria-labelledby="g-Quellen">
+      <h2 class="headline" id="g-Quellen">Quellen</h2>
+      <article class="comp" id="ReferenceRow">
+        <header class="comp-head">
+          <div>
+            <h3 class="work-title">Quellen-Eintrag <span class="identifier mg-subtle">ReferenceRow</span></h3>
+            <p class="body mg-muted">Eine Quelle in der Liste: Nummer, Werktitel, Autoren, Erscheinungsort und Status.</p>
+          </div>
+          <div class="mg-row comp-links">
+            <a class="mg-link label" href="components/ReferenceRow/index.html">Einzeln öffnen</a>
+            <a class="mg-link label" href="components/ReferenceRow/README.md">Richtlinien</a>
+          </div>
+        </header>
+        <div class="frame"><iframe src="components/ReferenceRow/index.html" title="Quellen-Eintrag" height="424"></iframe></div>
+      </article>
+    </section>
+    <section class="group" aria-labelledby="g-Kreuzreferenzen">
+      <h2 class="headline" id="g-Kreuzreferenzen">Kreuzreferenzen</h2>
+      <article class="comp" id="CitationGraph">
+        <header class="comp-head">
+          <div>
+            <h3 class="work-title">Zitationsnetz <span class="identifier mg-subtle">CitationGraph</span></h3>
+            <p class="body mg-muted">Zeigt, welche Quellen der Liste einander zitieren, und hebt Widersprüche zwischen ihnen hervor.</p>
+          </div>
+          <div class="mg-row comp-links">
+            <a class="mg-link label" href="components/CitationGraph/index.html">Einzeln öffnen</a>
+            <a class="mg-link label" href="components/CitationGraph/README.md">Richtlinien</a>
+          </div>
+        </header>
+        <div class="frame"><iframe src="components/CitationGraph/index.html" title="Zitationsnetz" height="400"></iframe></div>
+      </article>
+    </section>
+    <section class="group" aria-labelledby="g-Ansichten">
+      <h2 class="headline" id="g-Ansichten">Ansichten</h2>
+      <article class="comp" id="Workspace">
+        <header class="comp-head">
+          <div>
+            <h3 class="work-title">Arbeitsansicht <span class="identifier mg-subtle">Workspace</span></h3>
+            <p class="body mg-muted">Die Arbeitsansicht: Seitenleiste, Quellenliste und Detailpanel der ausgewählten Quelle.</p>
+          </div>
+          <div class="mg-row comp-links">
+            <a class="mg-link label" href="components/Workspace/index.html">Einzeln öffnen</a>
+            <a class="mg-link label" href="components/Workspace/README.md">Richtlinien</a>
+          </div>
+        </header>
+        <div class="frame scaled" data-w="1280" data-h="1044"><iframe src="components/Workspace/index.html" title="Arbeitsansicht" width="1280" height="1044"></iframe></div>
+      </article>
+    </section>
+
+    <section class="group" aria-labelledby="g-farben">
+      <h2 class="headline" id="g-farben">Farben</h2>
+      <ul class="swatches">
+        <li class="sw" data-token="paper" title="Seitenhintergrund. Warmes Off-White, nie reines Weiß; im Abend-Theme warmes Fast-Schwarz, nie #000."><span class="chip" style="background:var(--paper)"></span><span class="label">paper</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="surface" title="Karten, Detailpanel, Dialoge — alles, was auf paper liegt."><span class="chip" style="background:var(--surface)"></span><span class="label">surface</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="surface-sunken" title="Seitenleiste, Eingabefelder, Tabellenkopf, Segmented-Control-Schiene."><span class="chip" style="background:var(--surface-sunken)"></span><span class="label">surface-sunken</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="surface-hover" title="Hover einer Listenzeile auf surface oder paper."><span class="chip" style="background:var(--surface-hover)"></span><span class="label">surface-hover</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="line" title="Haarlinien zwischen Zeilen und um Karten. Rein gliedernd — trägt keine Bedeutung allein."><span class="chip" style="background:var(--line)"></span><span class="label">line</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="line-control" title="Rahmen von Eingabefeldern, Checkboxen, Sekundär-Buttons. Mind. 3:1 auf paper, surface und surface-sunken."><span class="chip" style="background:var(--line-control)"></span><span class="label">line-control</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="ink" title="Haupttext, Werktitel, Werte. Auf paper, surface, surface-sunken, surface-hover, accent-soft und mark."><span class="chip" style="background:var(--ink)"></span><span class="label">ink</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="ink-muted" title="Sekundärtext: Autorenzeilen, Feldlabels, Beschreibungen. Auf paper, surface, surface-sunken, surface-hover, accent-soft."><span class="chip" style="background:var(--ink-muted)"></span><span class="label">ink-muted</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="ink-subtle" title="Tertiäre Metadaten (Zeitstempel, Quellenangabe der Prüfung, Zähler). Auf paper, surface, surface-sunken, surface-hover — nicht auf Soft-Flächen."><span class="chip" style="background:var(--ink-subtle)"></span><span class="label">ink-subtle</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="accent" title="Tintenblau. Primäraktion, Auswahl, Links, aktive Kante im Zitationsnetz, Fokusring. Als Text auf paper, surface, surface-sunken, accent-soft."><span class="chip" style="background:var(--accent)"></span><span class="label">accent</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="accent-hover" title="Hover/Pressed des Primär-Buttons."><span class="chip" style="background:var(--accent-hover)"></span><span class="label">accent-hover</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="accent-soft" title="Hintergrund der ausgewählten Listenzeile, aktiver Navigationseintrag, Tinten-Chips."><span class="chip" style="background:var(--accent-soft)"></span><span class="label">accent-soft</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="on-accent" title="Text und Icons auf einer accent- oder accent-hover-Fläche (Label des Primär-Buttons)."><span class="chip" style="background:var(--on-accent)"></span><span class="label">on-accent</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="error" title="Status Fehler: eine Angabe widerspricht der Referenzquelle (Jahr, DOI, Autor). Als Text auf paper, surface, surface-sunken, error-soft. Immer mit Wort und Icon."><span class="chip" style="background:var(--error)"></span><span class="label">error</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="error-soft" title="Hintergrund des Fehler-Badges und markierter Fehlerstellen im Zitat."><span class="chip" style="background:var(--error-soft)"></span><span class="label">error-soft</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="missing" title="Status Fehlt: Pflichtfeld leer (Seiten, DOI, Verlag). Als Text auf paper, surface, surface-sunken, missing-soft. Immer mit Wort und Icon."><span class="chip" style="background:var(--missing)"></span><span class="label">missing</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="missing-soft" title="Hintergrund des Fehlt-Badges und des Platzhalters für fehlende Felder."><span class="chip" style="background:var(--missing-soft)"></span><span class="label">missing-soft</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="notice" title="Status Hinweis: uneinheitlich, aber nicht falsch (Schreibweise, Abkürzung, Formatierung). Als Text auf paper, surface, surface-sunken, notice-soft."><span class="chip" style="background:var(--notice)"></span><span class="label">notice</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="notice-soft" title="Hintergrund des Hinweis-Badges."><span class="chip" style="background:var(--notice-soft)"></span><span class="label">notice-soft</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="verified" title="Status Geprüft: mit Referenzquelle abgeglichen und vollständig. Blaugrün statt Grasgrün, damit es sich auch bei Rot-Grün-Sehschwäche von error abhebt. Als Text auf paper, surface, surface-sunken, verified-soft."><span class="chip" style="background:var(--verified)"></span><span class="label">verified</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="verified-soft" title="Hintergrund des Geprüft-Badges."><span class="chip" style="background:var(--verified-soft)"></span><span class="label">verified-soft</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="mark" title="Textmarker: Suchtreffer und die Stelle im Rohzitat, auf die sich ein ausgewählter Befund bezieht. ink darauf."><span class="chip" style="background:var(--mark)"></span><span class="label">mark</span><span class="identifier mg-subtle val"></span></li>
+        <li class="sw" data-token="link" title="Links und DOI-Verweise — Alias von accent."><span class="chip" style="background:var(--link)"></span><span class="label">link</span><span class="identifier mg-subtle val"></span></li>
+      </ul>
+    </section>
+
+  <footer class="foot caption mg-subtle">Schriften: Newsreader, Instrument Sans und IBM Plex Mono, jeweils unter der SIL Open Font License 1.1 (siehe <a class="mg-link" href="fonts/">fonts/</a>). Beispieldaten in den Vorschauen sind absichtlich fehlerhaft.</footer>
+</div>
+<script>
+  (function () {
+    var root = document.documentElement;
+    function fit() {
+      document.querySelectorAll('.frame.scaled').forEach(function (box) {
+        var w = +box.dataset.w, h = +box.dataset.h, s = box.clientWidth / w;
+        var f = box.querySelector('iframe');
+        f.style.width = w + 'px';
+        f.style.height = h + 'px';
+        f.style.transform = 'scale(' + s + ')';
+        box.style.height = Math.round(h * s) + 'px';
+      });
+    }
+    function values() {
+      var cs = getComputedStyle(root);
+      document.querySelectorAll('.sw').forEach(function (el) {
+        var v = cs.getPropertyValue('--' + el.dataset.token).trim();
+        el.querySelector('.val').textContent = v.indexOf('var(') === 0 ? v.replace(/var\(--([^)]+)\)/, '→ $1') : v;
+      });
+    }
+    function setTheme(t) {
+      root.setAttribute('data-theme', t);
+      document.querySelectorAll('[data-theme-btn]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.themeBtn === t)); });
+      document.querySelectorAll('iframe').forEach(function (f) { f.src = f.getAttribute('src').split('?')[0] + '?theme=' + t; });
+      try { localStorage.setItem('marginalia-theme', t); } catch (e) {}
+      values();
+    }
+    document.querySelectorAll('[data-theme-btn]').forEach(function (b) {
+      b.addEventListener('click', function () { setTheme(b.dataset.themeBtn); });
+    });
+    var saved = null;
+    try { saved = localStorage.getItem('marginalia-theme'); } catch (e) {}
+    if (saved === 'dark') setTheme('dark'); else values();
+    fit();
+    window.addEventListener('resize', fit);
+  })();
+</script>
+</body>
+</html>

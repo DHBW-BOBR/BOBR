@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../css/marginalia.css">
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<title>Marginalia · Segmented Control</title>
+<style>.wrap{padding:24px}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mg-seg" role="group" aria-label="Quellen filtern">
+    <button class="mg-seg__item" aria-pressed="true">Alle <span class="mg-seg__count">9</span></button>
+    <button class="mg-seg__item" aria-pressed="false">Fehler <span class="mg-seg__count">1</span></button>
+    <button class="mg-seg__item" aria-pressed="false">Fehlt <span class="mg-seg__count">3</span></button>
+    <button class="mg-seg__item" aria-pressed="false">Hinweise <span class="mg-seg__count">1</span></button>
+    <button class="mg-seg__item" aria-pressed="false">Geprüft <span class="mg-seg__count">4</span></button>
+  </div>
+</div>
+</body>
+</html>

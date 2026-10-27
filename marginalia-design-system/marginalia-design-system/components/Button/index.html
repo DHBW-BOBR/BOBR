@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../css/marginalia.css">
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<title>Marginalia · Button</title>
+<style>.wrap{display:grid;gap:16px;padding:24px}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mg-row">
+    <button class="mg-btn mg-btn--primary">Korrektur übernehmen</button>
+    <button class="mg-btn mg-btn--secondary">
+      <svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+      BibTeX importieren
+    </button>
+    <button class="mg-btn mg-btn--quiet">Ignorieren</button>
+    <button class="mg-btn mg-btn--quiet mg-btn--icon" aria-label="DOI kopieren">
+      <svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+    </button>
+  </div>
+  <div class="mg-row">
+    <button class="mg-btn mg-btn--primary mg-btn--lg">Liste prüfen</button>
+    <button class="mg-btn mg-btn--secondary mg-btn--lg">Bericht exportieren</button>
+    <button class="mg-btn mg-btn--secondary" disabled>Deaktiviert</button>
+  </div>
+</div>
+</body>
+</html>

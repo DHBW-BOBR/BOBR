@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="../css/marginalia.css">
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<title>Marginalia</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--paper); color:var(--ink); overflow:hidden; }
+  .cover { position:relative; width:960px; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:496px; height:288px; }
+  .accent { fill:var(--accent); }
+  .tint { fill:var(--accent-soft); }
+  .deep { fill:var(--ink); }
+  .tab { fill:var(--missing); }
+  .blk { rx:var(--radius-lg); }
+  .tabr { rx:var(--radius-sm); }
+  .rule { stroke:var(--accent); stroke-width:1.5; }
+  .rule.head { stroke:var(--error); }
+  .words { position:absolute; left:var(--space-6); bottom:var(--space-6); max-width:440px; }
+  .name { margin:0; font-family:var(--font-serif); font-size:88px; line-height:.92; font-weight:400; letter-spacing:-.02em; color:var(--ink); }
+  .tag { margin:var(--space-3) 0 0 3px; font-family:var(--font-sans); font-size:14px; line-height:20px; color:var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 496 288" width="496" height="288">
+<!--
+  blocks      accent 128×272 bled off the top (Tintenblau, the one identity hue) · accent-soft 192×168 (the index card, relief tint) · ink 128×216 bled off the right edge · missing 64×32 once, as the card's tab (a state colour, kept small) — ≈32% of 960×288
+  arrangement one tall accent slab with satellites, bottoms on one line space-6 above the edge, space-4 gutters
+  pattern     hairline rules, from "Haarlinien zuerst" and the serif, editorial voice: a library catalogue card — five accent rules at a space-5 pitch under one error-coloured head rule, inside the card only
+  scales      sides in space-4 multiples; gutters space-4; rule pitch space-5; corners radius-lg, tab radius-sm
+-->
+<rect class="accent blk" x="16" y="-16" width="128" height="272" rx="12"/>
+<rect class="tab tabr" x="176" y="64" width="64" height="32" rx="6"/>
+<rect class="tint blk" x="160" y="88" width="192" height="168" rx="12"/>
+<line class="rule head" x1="160" y1="120" x2="352" y2="120"/>
+<line class="rule" x1="160" y1="144" x2="352" y2="144"/>
+<line class="rule" x1="160" y1="168" x2="352" y2="168"/>
+<line class="rule" x1="160" y1="192" x2="352" y2="192"/>
+<line class="rule" x1="160" y1="216" x2="352" y2="216"/>
+<line class="rule" x1="160" y1="240" x2="352" y2="240"/>
+<rect class="deep blk" x="368" y="40" width="128" height="216" rx="12"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Marginalia</h1>
+<p class="tag">Literaturangaben prüfen – ruhig, genau, nachvollziehbar.</p>
+</div>
+</div>
+</body>
+</html>

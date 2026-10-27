@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../css/marginalia.css">
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<title>Marginalia · Arbeitsansicht</title>
+<style>
+  .mg-app { min-height: 1044px; }
+  .project { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; padding:8px; border:0; border-radius:var(--radius-md); background:transparent; color:var(--ink); text-align:left; cursor:pointer; }
+  .project:hover { background:var(--surface-hover); }
+  .project small { display:block; font:500 12px/16px var(--font-sans); color:var(--ink-subtle); }
+  .project span { font:500 13px/18px var(--font-sans); }
+  .foot { margin-top:auto; padding:0 8px; }
+  .head { margin-bottom:var(--space-5); }
+  .topline { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:var(--space-2); }
+  .topline .mg-eyebrow { margin:0; }
+  .head h1 { margin:0; }
+  .summary { display:grid; grid-template-columns: 320px 1fr; gap:32px; align-items:end; padding:var(--space-5) 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-bottom:var(--space-5); }
+  .tools { display:flex; gap:12px; justify-content:space-between; margin-bottom:var(--space-3); }
+  .tools .mg-search { width:260px; }
+  .panel-title { margin:0 0 var(--space-2); }
+  .panel-meta { margin:0 0 var(--space-4); }
+  .section { margin-top:var(--space-6); }
+  .more { margin-top:var(--space-2); }
+  .actions { display:flex; gap:8px; margin-top:var(--space-6); padding-top:var(--space-5); border-top:1px solid var(--line); }
+  .doi { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 8px 8px 12px; border:1px solid var(--line); border-radius:var(--radius-md); background:var(--paper); }
+</style>
+</head>
+<body>
+<div class="mg-app">
+  <!-- Seitenleiste -->
+  <aside class="mg-sidebar">
+    <div class="mg-brand">Marginalia</div>
+    <button class="project">
+      <span><small>Projekt</small>Seminararbeit Technologieakzeptanz</span>
+      <svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg>
+    </button>
+    <nav class="mg-nav" aria-label="Hauptnavigation">
+      <a class="mg-nav__item" href="#"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Übersicht</a>
+      <a class="mg-nav__item" href="#" aria-current="page"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19.5V5a2 2 0 0 1 2-2h12v15H7a2 2 0 0 0-2 2z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/></svg>Quellen<span class="mg-nav__count">9</span></a>
+      <a class="mg-nav__item" href="#"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8.4 6.4l7.2 1.2M6.8 8.4l2.4 7.2M16.4 10l-4.8 6"/></svg>Kreuzreferenzen<span class="mg-nav__count">6</span></a>
+      <a class="mg-nav__item" href="#"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><circle cx="5" cy="6" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="5" cy="18" r="1.5"/></svg>Befunde<span class="mg-nav__count">7</span></a>
+      <a class="mg-nav__item" href="#"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19h14"/></svg>Export</a>
+    </nav>
+    <nav class="mg-nav" aria-label="Datenquellen">
+      <div class="mg-nav__heading">Abgleich mit</div>
+      <span class="mg-nav__item">Crossref<span class="mg-nav__count">verbunden</span></span>
+      <span class="mg-nav__item">OpenAlex<span class="mg-nav__count">verbunden</span></span>
+    </nav>
+    <p class="foot caption mg-subtle">Zuletzt geprüft vor 2 Min.</p>
+  </aside>
+
+  <!-- Liste -->
+  <main class="mg-main">
+    <div class="head">
+      <div class="topline">
+        <p class="mg-eyebrow">Seminararbeit Technologieakzeptanz</p>
+        <div class="mg-row">
+        <button class="mg-btn mg-btn--secondary"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Importieren</button>
+        <button class="mg-btn mg-btn--primary">Erneut prüfen</button>
+        </div>
+      </div>
+      <h1 class="display">Literaturverzeichnis</h1>
+    </div>
+
+    <div class="summary">
+      <div class="mg-meter">
+        <div class="mg-meter__head">
+          <span class="label mg-muted">Quellen ohne Befund</span>
+          <span class="mg-meter__value">4 <span class="body mg-subtle">von 9</span></span>
+        </div>
+        <div class="mg-meter__bar" role="img" aria-label="4 geprüft, 1 Hinweis, 3 mit fehlenden Angaben, 1 mit Fehler">
+          <span class="mg-meter__seg mg-meter__seg--verified" style="flex:4"></span>
+          <span class="mg-meter__seg mg-meter__seg--notice" style="flex:1"></span>
+          <span class="mg-meter__seg mg-meter__seg--missing" style="flex:3"></span>
+          <span class="mg-meter__seg mg-meter__seg--error" style="flex:1"></span>
+        </div>
+      </div>
+      <p class="body mg-muted" style="margin:0;max-width:44ch">Eine Angabe widerspricht der Referenzquelle, bei drei Quellen fehlen Felder. Das Zitationsnetz zeigt einen Widerspruch zwischen zwei Einträgen.</p>
+    </div>
+
+    <div class="tools">
+      <div class="mg-seg" role="group" aria-label="Quellen filtern">
+        <button class="mg-seg__item" aria-pressed="true">Alle <span class="mg-seg__count">9</span></button>
+        <button class="mg-seg__item" aria-pressed="false">Fehler <span class="mg-seg__count">1</span></button>
+        <button class="mg-seg__item" aria-pressed="false">Fehlt <span class="mg-seg__count">3</span></button>
+        <button class="mg-seg__item" aria-pressed="false">Hinweise <span class="mg-seg__count">1</span></button>
+      </div>
+      <label class="mg-search">
+        <svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+        <input class="mg-input" type="search" placeholder="In Quellen suchen">
+        <kbd class="mg-kbd">⌘K</kbd>
+      </label>
+    </div>
+
+    <ul class="mg-reflist" role="listbox" aria-label="Quellen">
+      <li class="mg-ref" role="option" aria-selected="false">
+        <span class="mg-ref__index">[1]</span>
+        <h3 class="mg-ref__title work-title">A Relational Model of Data for Large Shared Data Banks</h3>
+        <span class="mg-ref__status"><span class="mg-status mg-status--verified"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/></svg>Geprüft</span></span>
+        <span class="mg-ref__authors">Codd, E. F.</span>
+        <span class="mg-ref__meta"><span class="mg-ref__venue">Communications of the ACM</span><span>13(6), 377–387</span><span>1970</span></span>
+      </li>
+      <li class="mg-ref" role="option" aria-selected="true">
+        <span class="mg-ref__index">[2]</span>
+        <h3 class="mg-ref__title work-title">Perceived Usefulness, Perceived Ease of Use, and User Acceptance of Information Technology</h3>
+        <span class="mg-ref__status">
+          <span class="mg-status mg-status--error"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>Fehler</span>
+          <span class="mg-status mg-status--missing"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="2.8 2.6"/><path d="M9 12h6"/></svg>Fehlt</span>
+        </span>
+        <span class="mg-ref__authors">Davis, F. D.</span>
+        <span class="mg-ref__meta"><span class="mg-ref__venue">MIS Quarterly</span><span>13(3), 319–340</span><span>1986</span></span>
+      </li>
+      <li class="mg-ref" role="option" aria-selected="false">
+        <span class="mg-ref__index">[3]</span>
+        <h3 class="mg-ref__title work-title">Design Science in Information Systems Research</h3>
+        <span class="mg-ref__status"><span class="mg-status mg-status--missing"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="2.8 2.6"/><path d="M9 12h6"/></svg>Fehlt</span></span>
+        <span class="mg-ref__authors">Hevner, A. R., March, S. T., Park, J., &amp; Ram, S.</span>
+        <span class="mg-ref__meta"><span class="mg-ref__venue">MIS Quarterly</span><span>28(1), 75–105</span><span>2004</span></span>
+      </li>
+      <li class="mg-ref" role="option" aria-selected="false">
+        <span class="mg-ref__index">[4]</span>
+        <h3 class="mg-ref__title work-title">Attention Is All You Need</h3>
+        <span class="mg-ref__status">
+          <span class="mg-status mg-status--missing"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="2.8 2.6"/><path d="M9 12h6"/></svg>Fehlt</span>
+        </span>
+        <span class="mg-ref__authors">Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., &amp; Polosukhin, I.</span>
+        <span class="mg-ref__meta"><span class="mg-ref__venue">Advances in Neural Information Processing Systems</span><span>30</span><span>2017</span></span>
+      </li>
+      <li class="mg-ref" role="option" aria-selected="false">
+        <span class="mg-ref__index">[5]</span>
+        <h3 class="mg-ref__title work-title">User Acceptance of Information Technology: Toward a Unified View</h3>
+        <span class="mg-ref__status"><span class="mg-status mg-status--missing"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="2.8 2.6"/><path d="M9 12h6"/></svg>Fehlt</span></span>
+        <span class="mg-ref__authors">Venkatesh, V., Morris, M. G., Davis, G. B., &amp; Davis, F. D.</span>
+        <span class="mg-ref__meta"><span class="mg-ref__venue">MIS Quarterly</span><span>27(3)</span><span>2003</span></span>
+      </li>
+      <li class="mg-ref" role="option" aria-selected="false">
+        <span class="mg-ref__index">[6]</span>
+        <h3 class="mg-ref__title work-title">The Entity-Relationship Model — Toward a Unified View of Data</h3>
+        <span class="mg-ref__status"><span class="mg-status mg-status--notice"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r="1" fill="currentColor" stroke="none"/></svg>Hinweis</span></span>
+        <span class="mg-ref__authors">Chen, P.</span>
+        <span class="mg-ref__meta"><span class="mg-ref__venue">ACM Transactions on Database Systems</span><span>1(1), 9–36</span><span>1976</span></span>
+      </li>
+    </ul>
+  </main>
+
+  <!-- Detail -->
+  <section class="mg-panel" aria-label="Quelle [2]">
+    <p class="mg-eyebrow">[2] · Zeitschriftenartikel</p>
+    <h2 class="headline panel-title">Perceived Usefulness, Perceived Ease of Use, and User Acceptance of Information Technology</h2>
+    <p class="body mg-muted panel-meta">Davis, F. D. · <i style="font-family:var(--font-serif)">MIS Quarterly</i> · 13(3), 319–340</p>
+    <div class="mg-row">
+      <span class="mg-status mg-status--error"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>Jahr weicht ab</span>
+      <span class="mg-status mg-status--missing"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="2.8 2.6"/><path d="M9 12h6"/></svg>DOI fehlt</span>
+    </div>
+
+    <div class="section">
+      <p class="mg-eyebrow">Abgleich mit Crossref</p>
+      <table class="mg-fields">
+        <thead><tr><th scope="col">Feld</th><th scope="col">Eintrag</th><th scope="col">Referenz</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mg-fields__label">Jahr</td>
+            <td><span class="mg-fields__wrong">1986</span></td>
+            <td><span class="mg-fields__suggest">1989</span></td>
+            <td><span class="mg-status mg-status--error"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>Fehler</span></td>
+          </tr>
+          <tr>
+            <td class="mg-fields__label">DOI</td>
+            <td><span class="mg-fields__empty">leer</span></td>
+            <td><span class="identifier mg-fields__suggest">10.2307/249008</span></td>
+            <td><span class="mg-status mg-status--missing"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="2.8 2.6"/><path d="M9 12h6"/></svg>Fehlt</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="caption mg-subtle more">Autor, Titel, Zeitschrift, Band, Heft und Seiten stimmen überein.</p>
+    </div>
+
+    <div class="section">
+      <p class="mg-eyebrow">Kreuzreferenz</p>
+      <div class="mg-callout"><strong>Venkatesh et al. (2003)</strong>, ebenfalls in deiner Liste, zitiert diese Arbeit als Davis (1989). Beide Einträge sollten dasselbe Jahr tragen.</div>
+    </div>
+
+    <div class="actions">
+      <button class="mg-btn mg-btn--primary">Korrekturen übernehmen</button>
+      <button class="mg-btn mg-btn--quiet">Ignorieren</button>
+    </div>
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../css/marginalia.css">
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<title>Marginalia · Eingabefeld</title>
+<style>.wrap{display:grid;grid-template-columns:1fr 1fr;gap:20px 24px;padding:24px;max-width:720px}.span{grid-column:1/-1}</style>
+</head>
+<body>
+<div class="wrap">
+  <label class="mg-search span">
+    <svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+    <input class="mg-input" type="search" placeholder="Titel, Autor oder DOI suchen">
+    <kbd class="mg-kbd">⌘K</kbd>
+  </label>
+  <div class="mg-field">
+    <label class="mg-field__label" for="year">Erscheinungsjahr</label>
+    <input class="mg-input mg-num" id="year" value="1986" aria-invalid="true" aria-describedby="year-hint">
+    <span class="mg-field__hint mg-field__hint--error" id="year-hint">Crossref nennt 1989.</span>
+  </div>
+  <div class="mg-field">
+    <label class="mg-field__label" for="doi">DOI</label>
+    <input class="mg-input mg-input--mono" id="doi" placeholder="10.xxxx/…" aria-describedby="doi-hint">
+    <span class="mg-field__hint" id="doi-hint">Ohne https://doi.org/ davor.</span>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../css/marginalia.css">
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<title>Marginalia · Vollständigkeit</title>
+<style>.wrap{padding:24px;max-width:520px}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mg-meter">
+    <div class="mg-meter__head">
+      <span class="label mg-muted">Quellen ohne Befund</span>
+      <span class="mg-meter__value">4 <span class="body mg-subtle">von 9</span></span>
+    </div>
+    <div class="mg-meter__bar" role="img" aria-label="4 geprüft, 1 Hinweis, 3 mit fehlenden Angaben, 1 mit Fehler">
+      <span class="mg-meter__seg mg-meter__seg--verified" style="flex:4"></span>
+      <span class="mg-meter__seg mg-meter__seg--notice" style="flex:1"></span>
+      <span class="mg-meter__seg mg-meter__seg--missing" style="flex:3"></span>
+      <span class="mg-meter__seg mg-meter__seg--error" style="flex:1"></span>
+    </div>
+    <ul class="mg-meter__legend">
+      <li class="mg-meter__key mg-meter__key--verified">4 Geprüft</li>
+      <li class="mg-meter__key mg-meter__key--notice">1 Hinweis</li>
+      <li class="mg-meter__key mg-meter__key--missing">3 Fehlt</li>
+      <li class="mg-meter__key mg-meter__key--error">1 Fehler</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

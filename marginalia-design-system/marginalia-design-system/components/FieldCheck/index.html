@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../css/marginalia.css">
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<title>Marginalia · Feldprüfung</title>
+<style>.wrap{padding:24px;max-width:640px}</style>
+</head>
+<body>
+<div class="wrap">
+  <table class="mg-fields">
+    <thead><tr><th scope="col">Feld</th><th scope="col">Dein Eintrag</th><th scope="col">Referenzquelle</th><th scope="col">Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="mg-fields__label">Autor</td>
+        <td>Davis, F. D.</td>
+        <td>Davis, Fred D.<span class="mg-fields__source">Crossref</span></td>
+        <td><span class="mg-status mg-status--plain mg-status--verified"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/></svg>Passt</span></td>
+      </tr>
+      <tr>
+        <td class="mg-fields__label">Jahr</td>
+        <td><span class="mg-fields__wrong">1986</span></td>
+        <td><span class="mg-fields__suggest">1989</span><span class="mg-fields__source">Crossref</span></td>
+        <td><span class="mg-status mg-status--error"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>Fehler</span></td>
+      </tr>
+      <tr>
+        <td class="mg-fields__label">Zeitschrift</td>
+        <td>MIS Quarterly</td>
+        <td>MIS Quarterly<span class="mg-fields__source">Crossref</span></td>
+        <td><span class="mg-status mg-status--plain mg-status--verified"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/></svg>Passt</span></td>
+      </tr>
+      <tr>
+        <td class="mg-fields__label">Band (Heft)</td>
+        <td>13(3)</td>
+        <td>13(3)<span class="mg-fields__source">Crossref</span></td>
+        <td><span class="mg-status mg-status--plain mg-status--verified"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/></svg>Passt</span></td>
+      </tr>
+      <tr>
+        <td class="mg-fields__label">Seiten</td>
+        <td>319–340</td>
+        <td>319–340<span class="mg-fields__source">Crossref</span></td>
+        <td><span class="mg-status mg-status--plain mg-status--verified"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/></svg>Passt</span></td>
+      </tr>
+      <tr>
+        <td class="mg-fields__label">DOI</td>
+        <td><span class="mg-fields__empty">nicht angegeben</span></td>
+        <td><span class="identifier mg-fields__suggest">10.2307/249008</span><span class="mg-fields__source">Crossref</span></td>
+        <td><span class="mg-status mg-status--missing"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="2.8 2.6"/><path d="M9 12h6"/></svg>Fehlt</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

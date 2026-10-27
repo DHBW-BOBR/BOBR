@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../css/marginalia.css">
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<title>Marginalia · Zitat mit Randnotizen</title>
+<style>.wrap{padding:28px 32px;max-width:880px}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mg-cite">
+    <p class="mg-cite__text">Davis, F. D. (<mark class="mg-flag mg-flag--error mg-flag--active">1986</mark><sup class="mg-noteref mg-noteref--error">1</sup>). Perceived usefulness, perceived ease of use, and user acceptance of information technology. <i>MIS Quarterly</i>, <i>13</i>(3), 319–340. <span class="mg-gap">DOI</span><sup class="mg-noteref mg-noteref--missing">2</sup></p>
+    <ol class="mg-notes" aria-label="Befunde">
+      <li class="mg-note mg-note--error">
+        <div class="mg-note__head"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>1 · Jahr weicht ab</div>
+        Crossref nennt <strong>1989</strong>. Venkatesh et&nbsp;al. (2003) in deiner Liste zitiert ebenfalls 1989.
+      </li>
+      <li class="mg-note mg-note--missing">
+        <div class="mg-note__head"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="2.8 2.6"/><path d="M9 12h6"/></svg>2 · DOI fehlt</div>
+        Gefunden: <strong class="identifier">10.2307/249008</strong>
+      </li>
+    </ol>
+  </div>
+</div>
+</body>
+</html>

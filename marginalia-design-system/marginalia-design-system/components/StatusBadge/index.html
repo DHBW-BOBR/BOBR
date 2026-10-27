@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../css/marginalia.css">
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<title>Marginalia · Status-Badge</title>
+<style>.wrap{display:grid;gap:16px;padding:24px}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mg-row">
+    <span class="mg-status mg-status--error"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>Fehler</span>
+    <span class="mg-status mg-status--missing"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="2.8 2.6"/><path d="M9 12h6"/></svg>Fehlt</span>
+    <span class="mg-status mg-status--notice"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r="1" fill="currentColor" stroke="none"/></svg>Hinweis</span>
+    <span class="mg-status mg-status--verified"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/></svg>Geprüft</span>
+  </div>
+  <div class="mg-row">
+    <span class="mg-status mg-status--error"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>Jahr weicht ab</span>
+    <span class="mg-status mg-status--missing"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="2.8 2.6"/><path d="M9 12h6"/></svg><span class="mg-status__count">2</span> Felder fehlen</span>
+    <span class="mg-status mg-status--plain mg-status--verified"><svg class="mg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/></svg>Geprüft gegen Crossref</span>
+  </div>
+</div>
+</body>
+</html>

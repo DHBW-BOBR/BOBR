@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<link rel="stylesheet" href="../../css/marginalia.css">
+<script>
+  (function () {
+    var t = new URLSearchParams(location.search).get('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<title>Marginalia · Zitationsnetz</title>
+<style>.wrap{padding:24px;max-width:760px}</style>
+</head>
+<body>
+<div class="wrap">
+  <figure class="mg-graph" style="margin:0">
+    <svg viewBox="0 0 760 296" role="img" aria-label="Zitationsnetz von acht Quellen. Ausgewählt: Vaswani 2017, zitiert von Devlin 2019 und Brown 2020, zitiert He 2016. Widerspruch: Venkatesh 2003 zitiert Davis mit 1989, die Liste führt 1986.">
+      <defs>
+        <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="mg-graph__arrow" d="M0 0.8L7.5 4L0 7.2z"/></marker>
+        <marker id="arrow-active" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="mg-graph__arrow mg-graph__arrow--active" d="M0 0.8L7.5 4L0 7.2z"/></marker>
+        <marker id="arrow-conflict" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="mg-graph__arrow mg-graph__arrow--conflict" d="M0 0.8L7.5 4L0 7.2z"/></marker>
+      </defs>
+      <line class="mg-graph__edge mg-graph__edge--conflict" x1="281.1" y1="82.6" x2="159.8" y2="145.0" marker-end="url(#arrow-conflict)"/>
+      <line class="mg-graph__edge" x1="260.0" y1="232.9" x2="131.0" y2="245.0" marker-end="url(#arrow)"/>
+      <line class="mg-graph__edge mg-graph__edge--active" x1="518.8" y1="140.4" x2="428.8" y2="207.4" marker-end="url(#arrow-active)"/>
+      <line class="mg-graph__edge mg-graph__edge--active" x1="640.8" y1="204.0" x2="542.6" y2="140.2" marker-end="url(#arrow-active)"/>
+      <line class="mg-graph__edge mg-graph__edge--active" x1="631.6" y1="67.4" x2="542.7" y2="123.9" marker-end="url(#arrow-active)"/>
+      <line class="mg-graph__edge" x1="640.7" y1="72.0" x2="649.2" y2="198.0" marker-end="url(#arrow)"/>
+      <circle class="mg-graph__node mg-graph__node--error" cx="150" cy="150" r="7"/>
+      <text class="mg-graph__label" x="150" y="173" text-anchor="middle">Davis 1986</text>
+      <circle class="mg-graph__node mg-graph__node--missing" cx="290" cy="78" r="7"/>
+      <text class="mg-graph__label" x="290" y="62" text-anchor="middle">Venkatesh 2003</text>
+      <circle class="mg-graph__node" cx="120" cy="246" r="7"/>
+      <text class="mg-graph__label" x="120" y="270" text-anchor="middle">Codd 1970</text>
+      <circle class="mg-graph__node mg-graph__node--notice" cx="270" cy="232" r="7"/>
+      <text class="mg-graph__label" x="270" y="256" text-anchor="middle">Chen 1976</text>
+      <circle class="mg-graph__node" cx="420" cy="214" r="7"/>
+      <text class="mg-graph__label" x="420" y="238" text-anchor="middle">He 2016</text>
+      <circle class="mg-graph__node mg-graph__node--selected" cx="530" cy="132" r="11"/>
+      <text class="mg-graph__label mg-graph__label--selected" x="549" y="136">Vaswani 2017</text>
+      <circle class="mg-graph__node" cx="650" cy="210" r="8"/>
+      <text class="mg-graph__label" x="650" y="235" text-anchor="middle">Devlin 2019</text>
+      <circle class="mg-graph__node" cx="640" cy="62" r="7"/>
+      <text class="mg-graph__label" x="640" y="46" text-anchor="middle">Brown 2020</text>
+    </svg>
+    <figcaption class="mg-graph__legend">
+      <span><svg viewBox="0 0 20 10" aria-hidden="true"><line class="mg-graph__edge" x1="1" y1="5" x2="19" y2="5"/></svg>zitiert</span>
+      <span><svg viewBox="0 0 20 10" aria-hidden="true"><line class="mg-graph__edge mg-graph__edge--active" x1="1" y1="5" x2="19" y2="5"/></svg>Verbindung der Auswahl</span>
+      <span><svg viewBox="0 0 20 10" aria-hidden="true"><line class="mg-graph__edge mg-graph__edge--conflict" x1="1" y1="5" x2="19" y2="5"/></svg>Widerspruch</span>
+      <span><svg viewBox="0 0 20 10" aria-hidden="true"><circle class="mg-graph__node mg-graph__node--missing" cx="10" cy="5" r="3.5"/></svg>Angaben fehlen</span>
+      <span><svg viewBox="0 0 20 10" aria-hidden="true"><circle class="mg-graph__node mg-graph__node--error" cx="10" cy="5" r="3.5"/></svg>Fehler</span>
+      <span><svg viewBox="0 0 20 10" aria-hidden="true"><circle class="mg-graph__node mg-graph__node--notice" cx="10" cy="5" r="3.5"/></svg>Hinweis</span>
+    </figcaption>
+  </figure>
+</div>
+</body>
+</html>

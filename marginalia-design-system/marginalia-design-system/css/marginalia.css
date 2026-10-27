@@ -1,0 +1,222 @@
+/* Marginalia — Komponenten-Stylesheet. Nach tokens/tokens.css laden. Alle Klassen mit Präfix mg-.
+   Typografie kommt aus den Typstil-Klassen von tokens.css (display, headline, work-title, body, label, caption, identifier). */
+
+[data-theme="dark"] { color-scheme: dark; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.mg-num { font-variant-numeric: lining-nums tabular-nums; }
+.mg-muted { color: var(--ink-muted); }
+.mg-subtle { color: var(--ink-subtle); }
+.mg-icon { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.mg-link { color: var(--link); text-decoration: none; }
+.mg-link:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.mg-link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-xs); }
+
+/* ── Button ───────────────────────────────────────────── */
+.mg-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 32px; padding: 0 var(--space-3);
+  border: 1px solid transparent; border-radius: var(--radius-md);
+  background: transparent; color: var(--ink);
+  font: 500 13px/18px var(--font-sans); white-space: nowrap; cursor: pointer;
+  transition: background-color .12s ease-out, border-color .12s ease-out, color .12s ease-out;
+}
+.mg-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.mg-btn--primary { background: var(--accent); color: var(--on-accent); }
+.mg-btn--primary:hover, .mg-btn--primary:active { background: var(--accent-hover); }
+.mg-btn--secondary { background: var(--surface); border-color: var(--line-control); }
+.mg-btn--secondary:hover { background: var(--surface-hover); }
+.mg-btn--quiet { color: var(--ink-muted); }
+.mg-btn--quiet:hover { background: var(--surface-hover); color: var(--ink); }
+.mg-btn--lg { height: 40px; padding: 0 var(--space-4); font-size: 15px; }
+.mg-btn--icon { width: 32px; padding: 0; }
+.mg-btn[disabled], .mg-btn[aria-disabled="true"] { opacity: .45; cursor: default; pointer-events: none; }
+
+/* ── Segmented Control ────────────────────────────────── */
+.mg-seg {
+  display: inline-flex; gap: 2px; padding: 3px;
+  background: var(--surface-sunken); border: 1px solid var(--line); border-radius: var(--radius-md);
+}
+.mg-seg__item {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 10px; border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--ink-muted);
+  font: 500 13px/18px var(--font-sans); cursor: pointer;
+  transition: background-color .12s ease-out, color .12s ease-out;
+}
+.mg-seg__item:hover { color: var(--ink); }
+.mg-seg__item[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm), 0 0 0 1px var(--line); }
+.mg-seg__item:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.mg-seg__count { color: var(--ink-subtle); font-weight: 400; font-variant-numeric: tabular-nums; }
+
+/* ── Eingabefeld ──────────────────────────────────────── */
+.mg-field { display: grid; gap: 6px; }
+.mg-field__label { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); }
+.mg-field__hint { font: 500 12px/16px var(--font-sans); color: var(--ink-subtle); }
+.mg-field__hint--error { color: var(--error); }
+.mg-input {
+  box-sizing: border-box; width: 100%; height: 36px; padding: 0 var(--space-3);
+  border: 1px solid var(--line-control); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--ink);
+  font: 400 15px/22px var(--font-sans);
+  transition: border-color .12s ease-out, box-shadow .12s ease-out;
+}
+.mg-input::placeholder { color: var(--ink-subtle); }
+.mg-input:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+.mg-input[aria-invalid="true"] { border-color: var(--error); }
+.mg-input--mono { font-family: var(--font-mono); font-size: 13px; }
+.mg-search { position: relative; display: block; }
+.mg-search > .mg-icon { position: absolute; left: 11px; top: 10px; color: var(--ink-subtle); pointer-events: none; }
+.mg-search > .mg-input { padding-left: 34px; padding-right: 44px; }
+.mg-search > .mg-kbd { position: absolute; right: 9px; top: 8px; }
+.mg-kbd {
+  display: inline-block; padding: 0 5px; border: 1px solid var(--line); border-radius: var(--radius-xs);
+  font: 500 11px/18px var(--font-mono); color: var(--ink-subtle); background: var(--paper);
+}
+
+/* ── Status-Badge ─────────────────────────────────────── */
+.mg-status {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 22px; padding: 0 8px 0 6px; border-radius: var(--radius-sm);
+  font: 500 12px/16px var(--font-sans); letter-spacing: .01em; white-space: nowrap;
+}
+.mg-status > .mg-icon { width: 14px; height: 14px; stroke-width: 1.75; }
+.mg-status--error    { background: var(--error-soft);    color: var(--error); }
+.mg-status--missing  { background: var(--missing-soft);  color: var(--missing); }
+.mg-status--notice   { background: var(--notice-soft);   color: var(--notice); }
+.mg-status--verified { background: var(--verified-soft); color: var(--verified); }
+.mg-status--plain { background: transparent; padding: 0; }
+.mg-status__count { font-variant-numeric: tabular-nums; }
+
+/* ── Vollständigkeit (segmentierter Balken) ───────────── */
+.mg-meter { display: grid; gap: var(--space-2); }
+.mg-meter__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.mg-meter__value { font: 400 32px/36px var(--font-serif); letter-spacing: -.01em; font-variant-numeric: lining-nums tabular-nums; }
+.mg-meter__bar { display: flex; gap: 2px; height: 6px; }
+.mg-meter__seg { min-width: 6px; border-radius: var(--radius-full); }
+.mg-meter__seg--verified { background: var(--verified); }
+.mg-meter__seg--notice   { background: var(--notice); }
+.mg-meter__seg--missing  { background: var(--missing); }
+.mg-meter__seg--error    { background: var(--error); }
+.mg-meter__legend { display: flex; flex-wrap: wrap; gap: 4px var(--space-4); margin: 0; padding: 0; list-style: none; font: 500 12px/16px var(--font-sans); color: var(--ink-muted); }
+.mg-meter__key { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.mg-meter__key::before { content: ""; width: 8px; height: 8px; border-radius: var(--radius-full); background: currentColor; }
+.mg-meter__key--verified::before { background: var(--verified); }
+.mg-meter__key--notice::before   { background: var(--notice); }
+.mg-meter__key--missing::before  { background: var(--missing); }
+.mg-meter__key--error::before    { background: var(--error); }
+
+/* ── Quellen-Eintrag (Listenzeile) ────────────────────── */
+.mg-reflist { list-style: none; margin: 0; padding: 0; }
+.mg-ref {
+  display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; column-gap: var(--space-3); row-gap: 2px;
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
+  border-top: 1px solid var(--line); border-radius: var(--radius-md);
+  cursor: pointer; transition: background-color .12s ease-out;
+}
+.mg-reflist > .mg-ref:first-child { border-top-color: transparent; }
+.mg-ref:hover { background: var(--surface-hover); }
+.mg-ref[aria-selected="true"] { background: var(--accent-soft); border-top-color: transparent; }
+.mg-ref[aria-selected="true"] + .mg-ref, .mg-ref:hover + .mg-ref { border-top-color: transparent; }
+.mg-ref:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.mg-ref__index { grid-row: 1 / span 3; font: 400 12px/24px var(--font-mono); color: var(--ink-subtle); text-align: right; }
+.mg-ref__title {
+  margin: 0; color: var(--ink);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.mg-ref__authors { font-size: 14px; line-height: 20px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mg-ref__meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); font: 500 12px/18px var(--font-sans); color: var(--ink-subtle); }
+.mg-ref__venue { font: italic 400 14px/18px var(--font-serif); color: var(--ink-muted); }
+.mg-ref__status { grid-column: 3; grid-row: 1 / span 3; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding-top: 1px; }
+
+/* ── Feldprüfung (Eintrag gegen Referenzquelle) ───────── */
+.mg-fields { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; }
+.mg-fields th { padding: 0 var(--space-3) var(--space-2) 0; border-bottom: 1px solid var(--line); text-align: left; font: 500 12px/16px var(--font-sans); color: var(--ink-subtle); }
+.mg-fields td { padding: 10px var(--space-3) 10px 0; vertical-align: top; border-bottom: 1px solid var(--line); vertical-align: top; }
+.mg-fields tr:last-child td { border-bottom: 0; }
+.mg-fields th:last-child, .mg-fields td:last-child { padding-right: 0; text-align: right; }
+.mg-fields__label { color: var(--ink-muted); font-weight: 500; white-space: nowrap; }
+.mg-fields__wrong { color: var(--ink-muted); text-decoration: line-through; text-decoration-color: var(--error); text-decoration-thickness: 1.5px; }
+.mg-fields__empty { color: var(--missing); font-style: italic; }
+.mg-fields__suggest { color: var(--ink); font-weight: 500; }
+.mg-fields__source { display: block; font: 500 12px/16px var(--font-sans); color: var(--ink-subtle); }
+
+/* ── Zitat mit Randnotizen ────────────────────────────── */
+.mg-cite { display: grid; grid-template-columns: minmax(0, 1fr) 232px; column-gap: var(--space-6); align-items: start; }
+.mg-cite__text { margin: 0; padding-left: 2em; text-indent: -2em; font: 400 17px/30px var(--font-serif); color: var(--ink); }
+.mg-cite__text i, .mg-cite__text em { font-style: italic; }
+.mg-flag { border-radius: var(--radius-xs); padding: 1px 2px; margin: 0 -2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; color: var(--ink); }
+.mg-flag--error  { background: var(--error-soft); box-shadow: inset 0 -2px 0 var(--error); }
+.mg-flag--notice { text-decoration: underline dotted var(--notice); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+.mg-flag--active { background: var(--mark); }
+.mg-gap {
+  display: inline-block; padding: 0 6px; margin: 0 1px; text-indent: 0;
+  border: 1px dashed var(--missing); border-radius: var(--radius-xs);
+  background: var(--missing-soft); color: var(--missing);
+  font: 500 12px/20px var(--font-sans); vertical-align: 2px;
+}
+.mg-noteref { font: 600 10px/1 var(--font-sans); vertical-align: super; margin-left: 2px; text-indent: 0; }
+.mg-noteref--error { color: var(--error); } .mg-noteref--missing { color: var(--missing); } .mg-noteref--notice { color: var(--notice); }
+.mg-notes { display: grid; gap: var(--space-4); margin: 0; padding: 4px 0 4px var(--space-4); list-style: none; border-left: 1px solid var(--line); }
+.mg-note { font-size: 13px; line-height: 19px; color: var(--ink-muted); }
+.mg-note__head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; font: 600 12px/16px var(--font-sans); }
+.mg-note__head > .mg-icon { width: 14px; height: 14px; stroke-width: 1.75; }
+.mg-note--error .mg-note__head { color: var(--error); }
+.mg-note--missing .mg-note__head { color: var(--missing); }
+.mg-note--notice .mg-note__head { color: var(--notice); }
+.mg-note strong { color: var(--ink); font-weight: 500; }
+
+/* ── Zitationsnetz ────────────────────────────────────── */
+.mg-graph { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+.mg-graph svg { display: block; width: 100%; height: auto; }
+.mg-graph__edge { fill: none; stroke: var(--line-control); stroke-width: 1.25; }
+.mg-graph__edge--active { stroke: var(--accent); stroke-width: 1.75; }
+.mg-graph__edge--conflict { stroke: var(--error); stroke-width: 1.75; stroke-dasharray: 5 4; }
+.mg-graph__arrow { fill: var(--line-control); } .mg-graph__arrow--active { fill: var(--accent); } .mg-graph__arrow--conflict { fill: var(--error); }
+.mg-graph__node { fill: var(--surface); stroke: var(--line-control); stroke-width: 1.5; }
+.mg-graph__node--selected { fill: var(--accent); stroke: var(--accent); }
+.mg-graph__node--error { stroke: var(--error); stroke-width: 2; }
+.mg-graph__node--missing { stroke: var(--missing); stroke-width: 2; stroke-dasharray: 3 2.5; }
+.mg-graph__node--notice { stroke: var(--notice); stroke-width: 2; }
+.mg-graph__label { font: 500 12px/1 var(--font-sans); fill: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.mg-graph__label--selected { fill: var(--ink); font-weight: 600; }
+.mg-graph__legend { display: flex; flex-wrap: wrap; gap: 4px var(--space-4); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--line); font: 500 12px/16px var(--font-sans); color: var(--ink-muted); }
+.mg-graph__legend span { display: inline-flex; align-items: center; gap: 6px; }
+.mg-graph__legend svg { width: 20px; height: 10px; }
+
+/* ── App-Rahmen ───────────────────────────────────────── */
+.mg-app { display: grid; grid-template-columns: 232px minmax(0, 1fr) 400px; min-height: 100vh; background: var(--paper); }
+.mg-sidebar { display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-4) var(--space-3); background: var(--surface-sunken); border-right: 1px solid var(--line); }
+.mg-brand { display: flex; align-items: center; gap: var(--space-2); padding: 4px var(--space-2); font: 500 19px/24px var(--font-serif); letter-spacing: -.01em; color: var(--ink); }
+.mg-nav { display: grid; gap: 2px; }
+.mg-nav__heading { padding: 0 var(--space-2); margin-bottom: 4px; font: 500 12px/16px var(--font-sans); color: var(--ink-subtle); }
+.mg-nav__item {
+  display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 var(--space-2);
+  border-radius: var(--radius-md); color: var(--ink-muted); text-decoration: none;
+  font: 500 13px/18px var(--font-sans);
+}
+.mg-nav__item:hover { background: var(--surface-hover); color: var(--ink); }
+.mg-nav__item[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line), var(--shadow-sm); }
+.mg-nav__item:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.mg-nav__count { margin-left: auto; font: 500 12px/16px var(--font-sans); color: var(--ink-subtle); font-variant-numeric: tabular-nums; }
+.mg-main { padding: var(--space-6) var(--space-6) var(--space-7); min-width: 0; }
+.mg-panel { padding: var(--space-6) 28px; background: var(--surface); border-left: 1px solid var(--line); min-width: 0; }
+.mg-eyebrow { margin: 0 0 var(--space-2); font: 500 12px/16px var(--font-sans); color: var(--ink-subtle); }
+.mg-callout { padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--surface-sunken); font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+.mg-callout strong { color: var(--ink); font-weight: 500; }
+.mg-toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.mg-stack { display: grid; gap: var(--space-2); }
+.mg-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mg-btn, .mg-seg__item, .mg-input, .mg-ref { transition: none; }
+}
