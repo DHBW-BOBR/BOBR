@@ -75,3 +75,12 @@ Studentisches Projekt im Studiengang Wirtschaftsinformatik – Business Engineer
 ## Lizenz
 
 BOBR wird als Open-Source-Software veröffentlicht. Die konkrete Lizenz wird mit dem Auftraggeber abgestimmt.
+
+
+---
+
+# Gefundene Tools
+
+Für den Graphen:
+https://networkx.org/documentation/stable/auto_examples/index.html
+
