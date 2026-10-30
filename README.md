@@ -52,7 +52,50 @@ Folgt mit dem ersten Release. Geplant sind fertige Programme für **Windows** un
 
 ## Technologie
 
-Wird in der Konzeptionsphase festgelegt. Bestehende Open-Source-Bausteine wie GROBID werden dabei geprüft.
+| Bereich | Technologie | Begründung |
+|---------|-------------|------------|
+| Sprache | Python | Vorgabe (RB4) |
+| GUI | PyQt6 | Plattformübergreifend (Windows + macOS), aktiv gepflegt |
+| Datenbank | Neo4j Community Edition (GPL v3) | Graphdatenbank für Zitiernetzwerk und Beziehungen zwischen Quellen |
+| BibTeX-Import | bibtexparser | Etablierte Python-Bibliothek für .bib-Dateien |
+| PDF-Import | pdfplumber | Zuverlässige Textextraktion aus PDFs |
+| Tests | pytest | Standard-Testframework für Python |
+| Linting | black + flake8 | Einheitliche Codeformatierung im Team |
+
+> **Voraussetzung:** Neo4j Community Edition muss lokal installiert sein bevor die Anwendung gestartet wird. Download unter [neo4j.com/download](https://neo4j.com/download/).
+
+## Projektstruktur
+
+```
+BOBR/
+├── src/
+│   ├── main.py                  # Einstiegspunkt der Anwendung
+│   ├── model/                   # Daten, Importlogik, Validierung, Datenbankzugriff
+│   │   ├── literature.py        # Datenmodell für Literatureinträge
+│   │   ├── importer/            # Datei-Import (.bib, .txt, .pdf)
+│   │   │   ├── bib_importer.py
+│   │   │   ├── txt_importer.py
+│   │   │   └── pdf_importer.py
+│   │   ├── validator/           # Prüflogik (Vollständigkeit, Konsistenz, Korrektheit)
+│   │   │   ├── completeness.py
+│   │   │   ├── consistency.py
+│   │   │   └── correctness.py
+│   │   └── database/            # Neo4j-Datenbankanbindung
+│   │       └── db.py
+│   ├── view/                    # GUI-Komponenten (PyQt6)
+│   │   ├── main_window.py
+│   │   ├── import_view.py
+│   │   └── results_view.py
+│   └── controller/              # Steuerung des Ablaufs zwischen Model und View
+│       ├── app_controller.py
+│       ├── import_controller.py
+│       ├── validator_controller.py
+│       └── correction_controller.py
+├── tests/                       # Unit- und Integrationstests (pytest)
+├── docs/                        # Anforderungen und Architekturdokumente
+├── .gitignore
+└── requirements.txt
+```
 
 ## Projektorganisation
 
