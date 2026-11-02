@@ -136,14 +136,15 @@ Vereinfachungen im Bild: `fingerprint` ist nur innerhalb eines Projekts eindeuti
 ```mermaid
 erDiagram
   project ||--o{ import_file : "hat"
+  project ||--o{ manuscript_person : "nennt"
+  project ||--o{ project_rule : "schaltet"
   project ||--o{ entry : "enthaelt"
-  import_file ||--o{ entry : "erstmals / zuletzt"
+  import_file ||--o{ entry : "liefert"
+  import_file ||--o{ check_run : "geprueft in"
+  import_file ||--o{ finding : "hat"
   entry }o--o| work : "abgeglichen mit"
   work ||--o{ citation : "zitiert"
   work ||--o{ citation : "wird zitiert"
-  project ||--o{ check_run : "hat"
-  entry ||--o{ check_state : "geprueft durch"
-  project ||--o{ finding : "hat"
   check_run |o--o{ finding : "erzeugt"
   finding ||--|{ finding_entry : "betrifft"
   entry ||--o{ finding_entry : "hat Befund"
@@ -152,7 +153,20 @@ erDiagram
   project {
     int id PK
     text name
-    json settings "u. a. manuscript_persons"
+    text created_at
+    text citation_style
+  }
+  manuscript_person {
+    int id PK
+    int project_id FK
+    text name
+    text orcid "optional"
+    text role "Autor, Gutachter, Editor"
+  }
+  project_rule {
+    int project_id PK, FK
+    text rule_id PK
+    int enabled "0 oder 1"
   }
   import_file {
     int id PK
@@ -160,13 +174,12 @@ erDiagram
     text file_name
     text file_hash
     text format "bib, txt, pdf"
+    text imported_at
   }
   entry {
     int id PK
     int project_id FK
-    int first_import_id FK
-    int last_import_id FK
-    text removed_at "nicht mehr in Datei"
+    int import_id FK
     text citekey
     text raw_text "Original"
     json data_original "inkl. Autoren laut Nutzer"
@@ -184,8 +197,8 @@ erDiagram
     text doi_norm UK
     text openalex_id UK
     text title
-    int year
     json data "Referenzdatensatz inkl. Autoren"
+    int year "generiert aus data"
     text fetched_from
   }
   citation {
@@ -195,18 +208,12 @@ erDiagram
   }
   check_run {
     int id PK
-    int project_id FK
+    int import_id FK
     text app_version
-  }
-  check_state {
-    int entry_id PK, FK
-    text rule_id PK
-    int rule_version
-    text input_hash
   }
   finding {
     int id PK
-    int project_id FK
+    int import_id FK
     int check_run_id FK
     text rule_id
     text category
@@ -226,7 +233,7 @@ erDiagram
     int id PK
     int finding_id FK
     int rank
-    text new_value
+    json changes "Feld und neuer Wert, null = entfernen"
     int work_id FK
     text label
     real score
