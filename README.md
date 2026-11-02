@@ -139,12 +139,8 @@ erDiagram
   project ||--o{ entry : "enthaelt"
   import_file ||--o{ entry : "erstmals / zuletzt"
   entry }o--o| work : "abgeglichen mit"
-  work ||--o{ work_author : "hat"
-  person ||--o{ work_author : "ist"
   work ||--o{ citation : "zitiert"
   work ||--o{ citation : "wird zitiert"
-  project ||--o{ project_person : "kennt"
-  person ||--o{ project_person : "hat Rolle"
   project ||--o{ check_run : "hat"
   entry ||--o{ check_state : "geprueft durch"
   project ||--o{ finding : "hat"
@@ -156,7 +152,7 @@ erDiagram
   project {
     int id PK
     text name
-    json settings
+    json settings "u. a. manuscript_persons"
   }
   import_file {
     int id PK
@@ -173,7 +169,7 @@ erDiagram
     text removed_at "nicht mehr in Datei"
     text citekey
     text raw_text "Original"
-    json data_original
+    json data_original "inkl. Autoren laut Nutzer"
     json data_current
     text doi_norm
     text title_norm
@@ -189,30 +185,13 @@ erDiagram
     text openalex_id UK
     text title
     int year
-    json data "Referenzdatensatz"
+    json data "Referenzdatensatz inkl. Autoren"
     text fetched_from
-  }
-  person {
-    int id PK
-    text display_name
-    text name_norm
-    text orcid UK
-    text openalex_id UK
-  }
-  work_author {
-    int work_id PK, FK
-    int position PK
-    int person_id FK
   }
   citation {
     int citing_work_id PK, FK
     int cited_work_id PK, FK
     text source_api PK
-  }
-  project_person {
-    int project_id PK, FK
-    int person_id PK, FK
-    text role PK "Autor, Gutachter, Editor"
   }
   check_run {
     int id PK
