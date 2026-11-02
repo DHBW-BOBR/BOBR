@@ -131,89 +131,108 @@ https://networkx.org/documentation/stable/auto_examples/index.html
 
 ---
 
-Vereinfachungen im Bild: `fingerprint` ist nur innerhalb eines Projekts eindeutig (Index auf `project_id` + `fingerprint`); die Beziehung `import_file` → `entry` steht für die beiden Spalten `first_import_id` und `last_import_id`.
+ 
+## Begriffe
+ 
+| Tabelle | Bedeutung |
+|---|---|
+| `project` | eine geprüfte Arbeit (Paper, Abschlussarbeit, Antrag) = eine `.bobr`-Datei |
+| `involved_person` | an der geprüften Arbeit beteiligte Person: Autor, Betreuer, Gutachter, Herausgeber (für Interessenkonflikt-Hinweise) |
+| `rule_setting` | Prüfregel im Projekt an- oder abgeschaltet (keine Zeile = Standard der Regel) |
+| `upload` | eine hochgeladene Literaturliste; jeder Upload ist eine eigene, gespeicherte Prüfung |
+| `reference` | eine Quelle aus der Literaturliste, so wie der Autor sie angegeben hat |
+| `publication` | die tatsächliche Veröffentlichung, so wie Crossref, OpenAlex usw. sie kennen |
+| `publication_citation` | Veröffentlichung A zitiert Veröffentlichung B (Kante im Zitationsgraphen) |
+| `check_run` | ein Prüfdurchlauf über einen Upload |
+| `finding` | ein Befund |
+| `finding_reference` | welche Quellen ein Befund betrifft (meist eine, bei Dubletten oder Zyklen mehrere) |
+| `suggestion` | ein Korrekturvorschlag; kann mehrere Felder auf einmal ändern |
+ 
+Vereinfachung im Bild: `fingerprint` ist nur innerhalb eines Uploads eindeutig (Index auf `upload_id` + `fingerprint`).
  
 ```mermaid
 erDiagram
-  project ||--o{ import_file : "hat"
-  project ||--o{ manuscript_person : "nennt"
-  project ||--o{ project_rule : "schaltet"
-  project ||--o{ entry : "enthaelt"
-  import_file ||--o{ entry : "liefert"
-  import_file ||--o{ check_run : "geprueft in"
-  import_file ||--o{ finding : "hat"
-  entry }o--o| work : "abgeglichen mit"
-  work ||--o{ citation : "zitiert"
-  work ||--o{ citation : "wird zitiert"
+  project ||--o{ involved_person : "beteiligt"
+  project ||--o{ rule_setting : "schaltet"
+  project ||--o{ upload : "hat"
+  project ||--o{ reference : "enthaelt"
+  upload ||--o{ reference : "liefert"
+  upload ||--o{ check_run : "geprueft in"
+  upload ||--o{ finding : "hat"
+  reference }o--o| publication : "zugeordnet"
+  publication ||--o{ publication_citation : "zitiert"
+  publication ||--o{ publication_citation : "wird zitiert"
   check_run |o--o{ finding : "erzeugt"
-  finding ||--|{ finding_entry : "betrifft"
-  entry ||--o{ finding_entry : "hat Befund"
+  finding ||--|{ finding_reference : "betrifft"
+  reference ||--o{ finding_reference : "hat Befund"
   finding ||--o{ suggestion : "bietet an"
-  work |o--o{ suggestion : "Kandidat"
+  publication |o--o{ suggestion : "Kandidat"
   project {
     int id PK
     text name
     text created_at
     text citation_style
   }
-  manuscript_person {
+  involved_person {
     int id PK
     int project_id FK
     text name
     text orcid "optional"
-    text role "Autor, Gutachter, Editor"
+    text role "author, supervisor, reviewer, editor"
   }
-  project_rule {
+  rule_setting {
     int project_id PK, FK
     text rule_id PK
     int enabled "0 oder 1"
   }
-  import_file {
+  upload {
     int id PK
     int project_id FK
     text file_name
     text file_hash
     text format "bib, txt, pdf"
-    text imported_at
+    text uploaded_at
   }
-  entry {
+  reference {
     int id PK
     int project_id FK
-    int import_id FK
+    int upload_id FK
+    int position
     text citekey
     text raw_text "Original"
-    json data_original "inkl. Autoren laut Nutzer"
-    json data_current
+    json data_original "inkl. Autoren laut Arbeit"
+    json data_current "inkl. Korrekturen"
+    text reference_type
     text doi_norm
     text title_norm
     int year
     text first_author_norm
     text content_hash
-    int work_id FK
+    int publication_id FK
     text match_method
   }
-  work {
+  publication {
     int id PK
     text doi_norm UK
     text openalex_id UK
     text title
-    json data "Referenzdatensatz inkl. Autoren"
+    json data "Datensatz inkl. Autoren"
     int year "generiert aus data"
     text fetched_from
   }
-  citation {
-    int citing_work_id PK, FK
-    int cited_work_id PK, FK
+  publication_citation {
+    int citing_publication_id PK, FK
+    int cited_publication_id PK, FK
     text source_api PK
   }
   check_run {
     int id PK
-    int import_id FK
+    int upload_id FK
     text app_version
   }
   finding {
     int id PK
-    int import_id FK
+    int upload_id FK
     int check_run_id FK
     text rule_id
     text category
@@ -225,19 +244,18 @@ erDiagram
     text fingerprint UK
     text status
   }
-  finding_entry {
+  finding_reference {
     int finding_id PK, FK
-    int entry_id PK, FK
+    int reference_id PK, FK
   }
   suggestion {
     int id PK
     int finding_id FK
     int rank
     json changes "Feld und neuer Wert, null = entfernen"
-    int work_id FK
+    int publication_id FK
     text label
     real score
     int is_chosen "max. einer je Befund"
   }
 ```
- 
