@@ -127,3 +127,131 @@ BOBR wird als Open-Source-Software veröffentlicht. Die konkrete Lizenz wird mit
 Für den Graphen:
 https://networkx.org/documentation/stable/auto_examples/index.html
 
+
+
+---
+
+Vereinfachungen im Bild: `fingerprint` ist nur innerhalb eines Projekts eindeutig (Index auf `project_id` + `fingerprint`); die Beziehung `import_file` → `entry` steht für die beiden Spalten `first_import_id` und `last_import_id`.
+ 
+```mermaid
+erDiagram
+  project ||--o{ import_file : "hat"
+  project ||--o{ entry : "enthaelt"
+  import_file ||--o{ entry : "erstmals / zuletzt"
+  entry }o--o| work : "abgeglichen mit"
+  work ||--o{ work_author : "hat"
+  person ||--o{ work_author : "ist"
+  work ||--o{ citation : "zitiert"
+  work ||--o{ citation : "wird zitiert"
+  project ||--o{ project_person : "kennt"
+  person ||--o{ project_person : "hat Rolle"
+  project ||--o{ check_run : "hat"
+  entry ||--o{ check_state : "geprueft durch"
+  project ||--o{ finding : "hat"
+  check_run |o--o{ finding : "erzeugt"
+  finding ||--|{ finding_entry : "betrifft"
+  entry ||--o{ finding_entry : "hat Befund"
+  finding ||--o{ suggestion : "bietet an"
+  work |o--o{ suggestion : "Kandidat"
+  project {
+    int id PK
+    text name
+    json settings
+  }
+  import_file {
+    int id PK
+    int project_id FK
+    text file_name
+    text file_hash
+    text format "bib, txt, pdf"
+  }
+  entry {
+    int id PK
+    int project_id FK
+    int first_import_id FK
+    int last_import_id FK
+    text removed_at "nicht mehr in Datei"
+    text citekey
+    text raw_text "Original"
+    json data_original
+    json data_current
+    text doi_norm
+    text title_norm
+    int year
+    text first_author_norm
+    text content_hash
+    int work_id FK
+    text match_method
+  }
+  work {
+    int id PK
+    text doi_norm UK
+    text openalex_id UK
+    text title
+    int year
+    json data "Referenzdatensatz"
+    text fetched_from
+  }
+  person {
+    int id PK
+    text display_name
+    text name_norm
+    text orcid UK
+    text openalex_id UK
+  }
+  work_author {
+    int work_id PK, FK
+    int position PK
+    int person_id FK
+  }
+  citation {
+    int citing_work_id PK, FK
+    int cited_work_id PK, FK
+    text source_api PK
+  }
+  project_person {
+    int project_id PK, FK
+    int person_id PK, FK
+    text role PK "Autor, Gutachter, Editor"
+  }
+  check_run {
+    int id PK
+    int project_id FK
+    text app_version
+  }
+  check_state {
+    int entry_id PK, FK
+    text rule_id PK
+    int rule_version
+    text input_hash
+  }
+  finding {
+    int id PK
+    int project_id FK
+    int check_run_id FK
+    text rule_id
+    text category
+    text severity
+    text confidence "confirmed, likely, possible"
+    text field
+    text old_value
+    json evidence
+    text fingerprint UK
+    text status
+  }
+  finding_entry {
+    int finding_id PK, FK
+    int entry_id PK, FK
+  }
+  suggestion {
+    int id PK
+    int finding_id FK
+    int rank
+    text new_value
+    int work_id FK
+    text label
+    real score
+    int is_chosen "max. einer je Befund"
+  }
+```
+ 
