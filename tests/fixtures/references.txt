@@ -1,0 +1,7 @@
+References
+
+[1] Smith, J. (2020). A study of things. Journal of Things, 12(3), 45-67. https://doi.org/10.1000/xyz123
+
+[2] Müller, M. (2019). Das große Buch. Verlag. https://example.org/buch
+
+[3] Weitere Hinweise folgen im Anhang

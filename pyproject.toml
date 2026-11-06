@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+# src/ ist das Source-Root (Importe laufen als `from model...`, `from controller...`).
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
