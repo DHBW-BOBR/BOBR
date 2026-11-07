@@ -18,71 +18,58 @@ Entspricht `bobr_schema.sql` mit `PRAGMA user_version = 8`. GitHub stellt den Me
 | `finding_reference` | welche Quellen ein Befund betrifft (meist eine, bei Dubletten oder Zyklen mehrere) |
 | `suggestion` | ein Korrekturvorschlag; kann mehrere Felder ändern und lässt sich rückgängig machen |
 
-## Änderungen gegenüber 0.7
-
-- `check_run` entfällt; der Stand der letzten Prüfung steht in `upload` (`last_check_*`).
-- `upload.file_content` speichert die Originaldatei (Export behält `@string`, `@preamble`, Kommentare und Reihenfolge).
-- `reference`: `project_id`, `raw_hash`, `content_hash` entfallen; Indizes laufen über den Upload; `reference_type` = BibTeX-Typ wie in der Datei.
-- `publication`: `sources` (JSON-Liste) statt `fetched_from`; `title` und `year` werden aus `data` generiert.
-- `publication_citation`: eine Veröffentlichung kann sich nicht selbst zitieren (CHECK).
-- `finding`: `check_run_id` entfällt; Status nur noch `open`, `accepted`, `rejected`; Fingerprint aus Regel + Feld + IDs der betroffenen Quellen.
-- `suggestion.previous_values` hält beim Annehmen die überschriebenen Werte fest (Rückgängig).
-
-Vereinfachung im Bild: `fingerprint` ist nur innerhalb eines Uploads eindeutig (Index auf `upload_id` + `fingerprint`).
-
-```mermaid
 erDiagram
-  project ||--o{ involved_person : "beteiligt"
-  project ||--o{ rule_setting : "schaltet"
-  project ||--o{ upload : "hat"
-  upload ||--o{ reference : "liefert"
-  upload ||--o{ finding : "hat"
-  reference }o--o| publication : "zugeordnet"
-  publication ||--o{ publication_citation : "zitiert"
-  publication ||--o{ publication_citation : "wird zitiert"
-  finding ||--|{ finding_reference : "betrifft"
-  reference ||--o{ finding_reference : "hat Befund"
-  finding ||--o{ suggestion : "bietet an"
-  publication |o--o{ suggestion : "Kandidat"
+  project ||--o{ involved_person : "involves"
+  project ||--o{ rule_setting : "configures"
+  project ||--o{ upload : "has"
+  upload ||--o{ reference : "contains"
+  upload ||--o{ finding : "has"
+  reference }o--o| publication : "matched to"
+  publication ||--o{ publication_citation : "cites"
+  publication ||--o{ publication_citation : "is cited"
+  finding ||--|{ finding_reference : "affects"
+  reference ||--o{ finding_reference : "has finding"
+  finding ||--o{ suggestion : "offers"
+  publication |o--o{ suggestion : "candidate"
   project {
     int id PK
-    text name
-    text created_at
+    text name "NOT NULL"
+    text created_at "NOT NULL"
     text citation_style
   }
   involved_person {
     int id PK
-    int project_id FK
-    text name
-    text orcid "optional"
-    text role "author, supervisor, reviewer, editor"
+    int project_id FK "NOT NULL"
+    text name "NOT NULL"
+    text orcid
+    text role "NOT NULL; author, supervisor, reviewer, editor"
   }
   rule_setting {
-    int project_id PK, FK
-    text rule_id PK
-    int enabled "0 oder 1"
+    int project_id PK, FK "NOT NULL"
+    text rule_id PK "NOT NULL"
+    int enabled "NOT NULL; 0 or 1"
   }
   upload {
     int id PK
-    int project_id FK
-    text file_name
-    text file_hash
-    blob file_content "Originaldatei"
-    text format "bib, txt, pdf"
-    text uploaded_at
+    int project_id FK "NOT NULL"
+    text file_name "NOT NULL"
+    text file_hash "NOT NULL"
+    blob file_content "NOT NULL; original file"
+    text format "NOT NULL; bib, txt, pdf"
+    text uploaded_at "NOT NULL"
     text last_check_started_at
     text last_check_finished_at
     text last_check_app_version
   }
   reference {
     int id PK
-    int upload_id FK
-    int position
+    int upload_id FK "NOT NULL"
+    int position "NOT NULL"
     text citekey
-    text raw_text "Original des Eintrags"
-    json data_original "inkl. Autoren laut Arbeit"
-    json data_current "inkl. Korrekturen"
-    text reference_type "BibTeX-Typ"
+    text raw_text "NOT NULL; original entry"
+    json data_original "NOT NULL; incl. authors as in the work"
+    json data_current "NOT NULL; incl. corrections"
+    text reference_type "BibTeX type"
     text doi_norm
     text title_norm
     int year
@@ -90,48 +77,52 @@ erDiagram
     int publication_id FK
     text match_method
     real match_score
+    text updated_at "NOT NULL"
   }
   publication {
     int id PK
     text doi_norm UK
     text openalex_id UK
-    json data "zusammengefuehrt, inkl. Autoren"
-    text title "generiert aus data"
-    int year "generiert aus data"
-    json sources "z. B. crossref, openalex"
+    json data "merged, incl. authors"
+    text title "generated from data"
+    int year "generated from data"
+    json sources "NOT NULL; e.g. crossref, openalex"
     text fetched_at
   }
   publication_citation {
-    int citing_publication_id PK, FK
-    int cited_publication_id PK, FK
-    text source_api PK
+    int citing_publication_id PK, FK "NOT NULL"
+    int cited_publication_id PK, FK "NOT NULL"
+    text source_api PK "NOT NULL"
+    text fetched_at "NOT NULL"
   }
   finding {
     int id PK
-    int upload_id FK
-    text rule_id
-    text category
-    text severity
-    text confidence "confirmed, likely, possible"
+    int upload_id FK "NOT NULL"
+    text rule_id "NOT NULL"
+    int rule_version "NOT NULL"
+    text category "NOT NULL"
+    text severity "NOT NULL"
     text field
+    text message "NOT NULL"
     text old_value
+    text confidence "NOT NULL; confirmed, likely, possible"
     json evidence
-    text fingerprint UK
-    text status "open, accepted, rejected"
+    text fingerprint UK "NOT NULL; unique per upload"
+    text status "NOT NULL; open, accepted, rejected"
+    text decided_at
   }
   finding_reference {
-    int finding_id PK, FK
-    int reference_id PK, FK
+    int finding_id PK, FK "NOT NULL"
+    int reference_id PK, FK "NOT NULL"
   }
   suggestion {
     int id PK
-    int finding_id FK
-    int rank
-    json changes "Feld und neuer Wert, null = entfernen"
-    json previous_values "fuer Rueckgaengig"
+    int finding_id FK "NOT NULL"
+    int rank "NOT NULL"
+    json changes "NOT NULL; field and new value, null = remove"
+    json previous_values "for undo"
     int publication_id FK
     text label
     real score
-    int is_chosen "max. einer je Befund"
+    int is_chosen "NOT NULL; max. one per finding"
   }
-```
