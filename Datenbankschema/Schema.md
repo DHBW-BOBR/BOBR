@@ -1,5 +1,5 @@
 
-# BOBR – Datenbankschema (ER-Diagramm, Version 0.8)
+# BOBR – Datenbankschema (ER-Diagramm)
 
 ```mermaid
 erDiagram
