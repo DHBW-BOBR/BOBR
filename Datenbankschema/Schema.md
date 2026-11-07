@@ -18,6 +18,7 @@ Entspricht `bobr_schema.sql` mit `PRAGMA user_version = 8`. GitHub stellt den Me
 | `finding_reference` | welche Quellen ein Befund betrifft (meist eine, bei Dubletten oder Zyklen mehrere) |
 | `suggestion` | ein Korrekturvorschlag; kann mehrere Felder ändern und lässt sich rückgängig machen |
 
+```mermaid
 erDiagram
   project ||--o{ involved_person : "involves"
   project ||--o{ rule_setting : "configures"
@@ -126,3 +127,4 @@ erDiagram
     real score
     int is_chosen "NOT NULL; max. one per finding"
   }
+```
