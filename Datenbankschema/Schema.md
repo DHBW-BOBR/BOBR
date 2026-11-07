@@ -1,23 +1,6 @@
 
 # BOBR – Datenbankschema (ER-Diagramm, Version 0.8)
 
-Entspricht `bobr_schema.sql` mit `PRAGMA user_version = 8`. GitHub stellt den Mermaid-Block direkt als Diagramm dar.
-
-## Begriffe
-
-| Tabelle | Bedeutung |
-|---|---|
-| `project` | eine geprüfte Arbeit (Paper, Abschlussarbeit, Antrag) = eine `.bobr`-Datei |
-| `involved_person` | an der geprüften Arbeit beteiligte Person: Autor, Betreuer, Gutachter, Herausgeber (für Interessenkonflikt-Hinweise) |
-| `rule_setting` | Prüfregel im Projekt an- oder abgeschaltet (keine Zeile = Standard der Regel) |
-| `upload` | eine hochgeladene Literaturliste samt Originaldatei; jeder Upload ist eine eigene, gespeicherte Prüfung |
-| `reference` | eine Quelle aus der Literaturliste, so wie der Autor sie angegeben hat |
-| `publication` | die tatsächliche Veröffentlichung, so wie Crossref, OpenAlex usw. sie kennen |
-| `publication_citation` | Veröffentlichung A zitiert Veröffentlichung B (Kante im Zitationsgraphen) |
-| `finding` | ein Befund |
-| `finding_reference` | welche Quellen ein Befund betrifft (meist eine, bei Dubletten oder Zyklen mehrere) |
-| `suggestion` | ein Korrekturvorschlag; kann mehrere Felder ändern und lässt sich rückgängig machen |
-
 ```mermaid
 erDiagram
   project ||--o{ involved_person : "involves"
