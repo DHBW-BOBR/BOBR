@@ -1,179 +1,177 @@
-# BOBR – Datenmodell (Schema v0.8)
- 
-Gilt für `bobr_schema.sql` mit `PRAGMA user_version = 8`. Diagramm: `bobr_erd_v08.md`.
- 
-## Grundsätze
- 
-- **Eine `.bobr`-Datei = ein Projekt = eine geprüfte Arbeit.** Keine Nutzerverwaltung.
-- **Jeder Upload ist eine eigene, gespeicherte Prüfung.** Uploads werden nicht zusammengeführt.
-- **`reference`** = Quelle, wie der Autor sie angegeben hat. **`publication`** = Veröffentlichung, wie Crossref, OpenAlex usw. sie kennen.
-- **JSON-Spalten** enthalten Literaturdaten im Format CSL-JSON. SQLite prüft nur, ob gültiges JSON vorliegt; den Inhalt prüft Python.
-- **Abgeleitete Spalten** in `reference` setzt der Code an genau einer Stelle (Repository-Schicht) bei jeder Änderung von `data_current`. **Generierte Spalten** in `publication` berechnet SQLite selbst; sie sind nicht direkt beschreibbar.
-- **Zeitstempel** sind Text im Format `YYYY-MM-DD HH:MM:SS` in UTC.
-- **Pflicht bei jeder Verbindung:** `PRAGMA foreign_keys = ON`, sonst prüft SQLite keine Fremdschlüssel.
-- **Nicht in der Projektdatei:** API-Cache, API-Nutzungszähler, Crossref-E-Mail und OpenAlex-Schlüssel (Nutzerordner bzw. Schlüsselspeicher des Systems).
-Legende: **PK** Primärschlüssel, **FK** Fremdschlüssel, **UK** eindeutig, **✓** Pflichtfeld (NOT NULL).
- 
----
- 
-## project – die geprüfte Arbeit
- 
-| Spalte | Typ | | Bedeutung |
-|---|---|---|---|
-| id | INTEGER | PK | |
-| name | TEXT | ✓ | Projektname |
-| created_at | TEXT | ✓ | Anlagezeitpunkt (automatisch) |
-| citation_style | TEXT | | erwarteter Zitierstil, z. B. `apa`; NULL = keine Stilprüfung |
- 
-## involved_person – Beteiligte der geprüften Arbeit
- 
-Vom Nutzer eingegeben; Grundlage der Interessenkonflikt-Hinweise. Nicht die Autoren der zitierten Quellen.
- 
-| Spalte | Typ | | Bedeutung |
-|---|---|---|---|
-| id | INTEGER | PK | |
-| project_id | INTEGER | FK ✓ | → `project` |
-| name | TEXT | ✓ | z. B. `Müller, Hans`; Normalisierung für Vergleiche macht Python |
-| orcid | TEXT | | optional; nur damit gelten Treffer als `confirmed`, sonst höchstens `possible` |
-| role | TEXT | ✓ | `author`, `supervisor`, `reviewer`, `editor` |
- 
-## rule_setting – Prüfregeln pro Projekt an/aus
- 
-Nur Abweichungen vom Standard. Keine Zeile = Standard der Regel.
- 
-| Spalte | Typ | | Bedeutung |
-|---|---|---|---|
-| project_id | INTEGER | PK, FK | → `project` |
-| rule_id | TEXT | PK | z. B. `V01_pflichtfelder`; gültige IDs prüft Python |
-| enabled | INTEGER | ✓ | `1` an, `0` aus |
- 
-## upload – eine hochgeladene Literaturliste
- 
-| Spalte | Typ | | Bedeutung |
-|---|---|---|---|
-| id | INTEGER | PK | |
-| project_id | INTEGER | FK ✓ | → `project` |
-| file_name | TEXT | ✓ | ursprünglicher Dateiname |
-| file_hash | TEXT | ✓ | Hash der Datei; Hinweis, wenn dieselbe Datei schon hochgeladen wurde |
-| file_content | BLOB | ✓ | Originaldatei; Basis für den Export der korrigierten .bib (behält `@string`, Kommentare, Reihenfolge) und für erneutes Auslesen von PDFs |
-| format | TEXT | ✓ | `bib`, `txt`, `pdf` |
-| uploaded_at | TEXT | ✓ | Zeitpunkt des Uploads (automatisch) |
-| last_check_started_at | TEXT | | Start der letzten Prüfung; NULL = nie geprüft |
-| last_check_finished_at | TEXT | | Ende der letzten Prüfung; NULL bei gesetztem Start = abgebrochen |
-| last_check_app_version | TEXT | | BOBR-Version der letzten Prüfung |
- 
-## reference – eine Quelle aus der Literaturliste
- 
-So, wie der Autor sie angegeben hat; kann Fehler enthalten.
- 
-| Spalte | Typ | | Bedeutung |
-|---|---|---|---|
-| id | INTEGER | PK | |
-| upload_id | INTEGER | FK ✓ | → `upload` |
-| position | INTEGER | ✓ | Reihenfolge in der Datei |
-| citekey | TEXT | | BibTeX-Schlüssel; bei .txt/.pdf leer; doppelte Schlüssel erlaubt (werden als Befund gemeldet) |
-| raw_text | TEXT | ✓ | Originaltext des Eintrags, nie verändert |
-| data_original | JSON | ✓ | geparster Eintrag beim Upload, nie verändert |
-| data_current | JSON | ✓ | aktueller Stand inkl. angenommener Korrekturen |
-| reference_type | TEXT | | BibTeX-Typ wie in der Datei (`article`, `book` …); unbekannte Typen sind ein Befund |
-| doi_norm | TEXT | | normalisierte DOI (abgeleitet) |
-| title_norm | TEXT | | normalisierter Titel (abgeleitet) |
-| year | INTEGER | | Jahr als Zahl (abgeleitet); `2015a` → 2015, `im Druck` → NULL |
-| first_author_norm | TEXT | | normalisierter Nachname des Erstautors (abgeleitet) |
-| publication_id | INTEGER | FK | → `publication`; NULL = keine Zuordnung |
-| match_method | TEXT | | Art der Zuordnung: `doi`, `search`, `manual` |
-| match_score | REAL | | Ähnlichkeit bei Zuordnung über Suche (0–1) |
-| updated_at | TEXT | ✓ | letzte Änderung |
- 
-## publication – Veröffentlichung laut Datenbanken
- 
-Vergleichsdatensatz für die Korrektheitsprüfung und Knoten im Zitationsgraphen, auch für Veröffentlichungen außerhalb der Liste. Wird nur vom Code beim Abruf geschrieben.
- 
-| Spalte | Typ | | Bedeutung |
-|---|---|---|---|
-| id | INTEGER | PK | |
-| doi_norm | TEXT | UK | normalisierte DOI; mehrfach NULL erlaubt |
-| openalex_id | TEXT | UK | OpenAlex-ID der Veröffentlichung |
-| data | JSON | | aus allen Quellen zusammengeführter Datensatz inkl. Autoren mit ORCID/OpenAlex-Autor-ID; bei Widersprüchen entscheidet eine feste Regel im Code |
-| title | TEXT | | **generiert** aus `data` |
-| year | INTEGER | | **generiert** aus `data` |
-| sources | JSON | ✓ | Liste der Datenquellen, z. B. `["crossref","openalex"]` |
-| fetched_at | TEXT | | letzter Abruf |
- 
-## publication_citation – Kante im Zitationsgraphen
- 
-Veröffentlichung A zitiert Veröffentlichung B, je Datenquelle eine Zeile. A → A ist gesperrt (Datenfehler der API; nicht zu verwechseln mit Selbstzitation A → B mit gleichem Autor).
- 
-| Spalte | Typ | | Bedeutung |
-|---|---|---|---|
-| citing_publication_id | INTEGER | PK, FK | → `publication` (zitierend) |
-| cited_publication_id | INTEGER | PK, FK | → `publication` (zitiert) |
-| source_api | TEXT | PK | `crossref`, `openalex`, `opencitations` |
-| fetched_at | TEXT | ✓ | Abrufzeitpunkt |
- 
-## finding – ein Befund
- 
-| Spalte | Typ | | Bedeutung |
-|---|---|---|---|
-| id | INTEGER | PK | |
-| upload_id | INTEGER | FK ✓ | → `upload` |
-| rule_id | TEXT | ✓ | auslösende Regel |
-| rule_version | INTEGER | ✓ | Version der Regel |
-| category | TEXT | ✓ | `completeness`, `consistency`, `correctness`, `network` |
-| severity | TEXT | ✓ | `info`, `warning`, `error` |
-| field | TEXT | | betroffenes Hauptfeld, z. B. `year` |
-| message | TEXT | ✓ | Meldungstext |
-| old_value | TEXT | | Wert des Hauptfelds bei der Prüfung (Anzeige) |
-| confidence | TEXT | ✓ | `confirmed`, `likely`, `possible` (Standard `confirmed`) |
-| evidence | JSON | | Belege: Datenquelle, Score, URL … |
-| fingerprint | TEXT | ✓, UK je Upload | Regel + Feld + IDs der betroffenen Quellen, z. B. `K05:year:17`; erkennt denselben Befund bei erneuter Prüfung |
-| status | TEXT | ✓ | `open`, `accepted`, `rejected` (Standard `open`) |
-| decided_at | TEXT | | Zeitpunkt der Entscheidung |
- 
-Bei erneuter Prüfung löscht der Code offene Befunde, die nicht mehr entstehen; angenommene und abgelehnte bleiben.
- 
-## finding_reference – betroffene Quellen eines Befunds
- 
-Meist eine Quelle; bei Dublette, Zyklus oder gegenseitiger Zitation mehrere.
- 
-| Spalte | Typ | | Bedeutung |
-|---|---|---|---|
-| finding_id | INTEGER | PK, FK | → `finding` |
-| reference_id | INTEGER | PK, FK | → `reference` |
- 
-## suggestion – Korrekturvorschlag
- 
-| Spalte | Typ | | Bedeutung |
-|---|---|---|---|
-| id | INTEGER | PK | |
-| finding_id | INTEGER | FK ✓ | → `finding` |
-| rank | INTEGER | ✓ | Reihenfolge in der GUI, `1` = Empfehlung |
-| changes | JSON | ✓ | Feld → neuer Wert, z. B. `{"year":"2015"}`; mehrere Felder möglich; `null` = Feld entfernen |
-| previous_values | JSON | | beim Annehmen gesetzt: überschriebene Werte je Quelle, z. B. `{"17":{"year":"im Druck"}}`; für Rückgängig und „vorher/nachher“ |
-| publication_id | INTEGER | FK | → `publication`; bei „Meinst du Veröffentlichung A oder B?“ |
-| label | TEXT | | kurze Erklärung, z. B. `Druckjahr` |
-| score | REAL | | Ähnlichkeit bei Suchtreffern |
-| is_chosen | INTEGER | ✓ | `1` = gewählt; höchstens einer je Befund |
+# BOBR – Data Model Explanation
+  
+## Principles
+
+- **One `.bobr` file = one project = one work under review.** No user management.
+- **Each upload is a separate, saved check.** Uploads are not merged.
+- **`reference`** = a source as the author cited it. **`publication`** = a publication as Crossref, OpenAlex etc. know it.
+- **JSON columns:** `reference.data_original`, `reference.data_current` and `publication.data` hold bibliographic data in CSL-JSON format; the other JSON columns (e.g. `sources`, `evidence`, `changes`) hold simple lists or objects. SQLite only checks that the JSON is valid (`CHECK (json_valid(column))`); Python checks the content.
+- **Derived columns** in `reference` are set by the code in exactly one place (repository layer) whenever `data_current` changes. **Generated columns** in `publication` are computed by SQLite itself; they cannot be written directly.
+- **Timestamps** are text in the format `YYYY-MM-DD HH:MM:SS`, in UTC.
+- **Required on every connection:** `PRAGMA foreign_keys = ON`; otherwise SQLite does not check foreign keys.
+- **Not stored in the project file:** API cache, API usage counters, Crossref e-mail address and OpenAlex key (user folder or the operating system's credential store).
+
+Legend: **PK** primary key, **FK** foreign key, **UK** unique, **NOT NULL** required field.
  
 ---
  
-## Verknüpfungen
+## project – the work under review
  
-| Von | Nach | Kardinalität | Beim Löschen des Ziels |
+| Column | Type | Constraints | Description |
 |---|---|---|---|
-| `involved_person.project_id` | `project` | n : 1 | wird mitgelöscht |
-| `rule_setting.project_id` | `project` | n : 1 | wird mitgelöscht |
-| `upload.project_id` | `project` | n : 1 | wird mitgelöscht |
-| `reference.upload_id` | `upload` | n : 1 | wird mitgelöscht |
-| `finding.upload_id` | `upload` | n : 1 | wird mitgelöscht |
-| `reference.publication_id` | `publication` | n : 0..1 | wird NULL |
-| `publication_citation.citing_publication_id` | `publication` | n : 1 | wird mitgelöscht |
-| `publication_citation.cited_publication_id` | `publication` | n : 1 | wird mitgelöscht |
-| `finding_reference.finding_id` | `finding` | n : 1 | wird mitgelöscht |
-| `finding_reference.reference_id` | `reference` | n : 1 | wird mitgelöscht |
-| `suggestion.finding_id` | `finding` | n : 1 | wird mitgelöscht |
-| `suggestion.publication_id` | `publication` | n : 0..1 | wird NULL |
+| id | INTEGER | PK | |
+| name | TEXT | NOT NULL | Project name |
+| created_at | TEXT | NOT NULL | Creation timestamp (set automatically) |
+| citation_style | TEXT | | Expected citation style, e.g. `apa`; NULL = no style check |
  
-`finding` ↔ `reference` ist eine n : m-Beziehung über `finding_reference`. Dass jeder Befund mindestens eine Quelle betrifft, stellt der Code sicher (SQLite kann das nicht erzwingen).
+## involved_person – people involved in the work under review
  
-**Löschketten:** Projekt löschen → alles im Projekt. Upload löschen → dessen Quellen, Befunde, Zuordnungen und Vorschläge; andere Uploads und alle `publication`-Zeilen bleiben.
+Entered by the user; basis for the conflict-of-interest notes. Not the authors of the cited sources.
+ 
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| id | INTEGER | PK | |
+| project_id | INTEGER | FK, NOT NULL | → `project` |
+| name | TEXT | NOT NULL | e.g. `Müller, Hans`; normalization for comparisons is done in Python |
+| orcid | TEXT | | Optional; only with an ORCID can matches count as `confirmed`, otherwise at most `possible` |
+| role | TEXT | NOT NULL | `author`, `supervisor`, `reviewer`, `editor` |
+ 
+## rule_setting – check rules switched on/off per project
+ 
+Only deviations from the default. No row = the rule's default applies.
+ 
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| project_id | INTEGER | PK, FK, NOT NULL | → `project` |
+| rule_id | TEXT | PK, NOT NULL | e.g. `V01_required_fields`; valid IDs are checked in Python |
+| enabled | INTEGER | NOT NULL | `1` on, `0` off |
+ 
+## upload – an uploaded reference list
+ 
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| id | INTEGER | PK | |
+| project_id | INTEGER | FK, NOT NULL | → `project` |
+| file_name | TEXT | NOT NULL | Original file name |
+| file_hash | TEXT | NOT NULL | Hash of the file; shows a notice if the same file has already been uploaded |
+| file_content | BLOB | NOT NULL | Original file; basis for exporting the corrected .bib (keeps `@string`, comments, order) and for re-parsing PDFs |
+| format | TEXT | NOT NULL | `bib`, `txt`, `pdf` |
+| uploaded_at | TEXT | NOT NULL | Upload timestamp (set automatically) |
+| last_check_started_at | TEXT | | Start of the last check; NULL = never checked |
+| last_check_finished_at | TEXT | | End of the last check; NULL while the start is set = aborted |
+| last_check_app_version | TEXT | | BOBR version used for the last check |
+ 
+## reference – a source from the reference list
+ 
+As given by the author; may contain errors.
+ 
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| id | INTEGER | PK | |
+| upload_id | INTEGER | FK, NOT NULL | → `upload` |
+| position | INTEGER | NOT NULL | Order in the file |
+| citekey | TEXT | | BibTeX key; empty for .txt/.pdf; duplicate keys allowed (reported as a finding) |
+| raw_text | TEXT | NOT NULL | Original text of the entry, never changed |
+| data_original | JSON | NOT NULL | Entry as parsed at upload, never changed |
+| data_current | JSON | NOT NULL | Current state incl. accepted corrections |
+| reference_type | TEXT | | BibTeX type as in the file (`article`, `book` …); unknown types are a finding |
+| doi_norm | TEXT | | Normalized DOI (derived) |
+| title_norm | TEXT | | Normalized title (derived) |
+| year | INTEGER | | Year as a number (derived); `2015a` → 2015, `in press` → NULL |
+| first_author_norm | TEXT | | Normalized surname of the first author (derived) |
+| publication_id | INTEGER | FK | → `publication`; NULL = not matched |
+| match_method | TEXT | | How it was matched: `doi`, `search`, `manual` |
+| match_score | REAL | | Similarity when matched via search (0–1) |
+| updated_at | TEXT | NOT NULL | Last change |
+ 
+## publication – publication according to the databases
+ 
+Reference record for the correctness check and node in the citation graph, also for publications outside the list. Written only by the code when fetching data.
+ 
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| id | INTEGER | PK | |
+| doi_norm | TEXT | UK | Normalized DOI; multiple NULLs allowed |
+| openalex_id | TEXT | UK | OpenAlex ID of the publication |
+| data | JSON | | Record merged from all sources incl. authors with ORCID/OpenAlex author ID; conflicts are resolved by a fixed rule in the code |
+| title | TEXT | | **Generated** from `data` |
+| year | INTEGER | | **Generated** from `data` |
+| sources | JSON | NOT NULL | List of data sources, e.g. `["crossref","openalex"]` |
+| fetched_at | TEXT | | Last fetch |
+ 
+## publication_citation – edge in the citation graph
+ 
+Publication A cites publication B, one row per data source. A → A is blocked (a data error from the API; not to be confused with self-citation A → B by the same author).
+ 
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| citing_publication_id | INTEGER | PK, FK, NOT NULL | → `publication` (citing) |
+| cited_publication_id | INTEGER | PK, FK, NOT NULL | → `publication` (cited) |
+| source_api | TEXT | PK, NOT NULL | `crossref`, `openalex`, `opencitations` |
+| fetched_at | TEXT | NOT NULL | Fetch timestamp |
+ 
+## finding – a finding
+ 
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| id | INTEGER | PK | |
+| upload_id | INTEGER | FK, NOT NULL | → `upload` |
+| rule_id | TEXT | NOT NULL | Rule that raised the finding |
+| rule_version | INTEGER | NOT NULL | Version of the rule |
+| category | TEXT | NOT NULL | `completeness`, `consistency`, `correctness`, `network` |
+| severity | TEXT | NOT NULL | `info`, `warning`, `error` |
+| field | TEXT | | Main field affected, e.g. `year` |
+| message | TEXT | NOT NULL | Message text |
+| old_value | TEXT | | Value of the main field at check time (for display) |
+| confidence | TEXT | NOT NULL | `confirmed`, `likely`, `possible` (default `confirmed`) |
+| evidence | JSON | | Evidence: data source, score, URL … |
+| fingerprint | TEXT | NOT NULL, UK per upload | Rule + field + IDs of the affected sources, e.g. `K05:year:17`; recognizes the same finding when checking again |
+| status | TEXT | NOT NULL | `open`, `accepted`, `rejected` (default `open`) |
+| decided_at | TEXT | | Time of the decision |
+ 
+When checking again, the code deletes open findings that no longer occur; accepted and rejected findings are kept.
+ 
+## finding_reference – sources affected by a finding
+ 
+Usually one source; several for duplicates, cycles or mutual citations.
+ 
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| finding_id | INTEGER | PK, FK, NOT NULL | → `finding` |
+| reference_id | INTEGER | PK, FK, NOT NULL | → `reference` |
+ 
+## suggestion – correction suggestion
+ 
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| id | INTEGER | PK | |
+| finding_id | INTEGER | FK, NOT NULL | → `finding` |
+| rank | INTEGER | NOT NULL | Order in the GUI, `1` = recommended |
+| changes | JSON | NOT NULL | Field → new value, e.g. `{"year":"2015"}`; several fields possible; `null` = remove field |
+| previous_values | JSON | | Set on acceptance: overwritten values per source, e.g. `{"17":{"year":"in press"}}`; for undo and before/after view |
+| publication_id | INTEGER | FK | → `publication`; for "Did you mean publication A or B?" |
+| label | TEXT | | Short explanation, e.g. `print year` |
+| score | REAL | | Similarity for search hits |
+| is_chosen | INTEGER | NOT NULL | `1` = chosen; at most one per finding |
+ 
+ 
+## Relationships
+
+| From | To | Cardinality | On delete of target |
+|---|---|---|---|
+| `involved_person.project_id` | `project` | n : 1 | `CASCADE` |
+| `rule_setting.project_id` | `project` | n : 1 | `CASCADE` |
+| `upload.project_id` | `project` | n : 1 | `CASCADE` |
+| `reference.upload_id` | `upload` | n : 1 | `CASCADE` |
+| `finding.upload_id` | `upload` | n : 1 | `CASCADE` |
+| `reference.publication_id` | `publication` | n : 0..1 | `SET NULL` |
+| `publication_citation.citing_publication_id` | `publication` | n : 1 | `CASCADE` |
+| `publication_citation.cited_publication_id` | `publication` | n : 1 | `CASCADE` |
+| `finding_reference.finding_id` | `finding` | n : 1 | `CASCADE` |
+| `finding_reference.reference_id` | `reference` | n : 1 | `CASCADE` |
+| `suggestion.finding_id` | `finding` | n : 1 | `CASCADE` |
+| `suggestion.publication_id` | `publication` | n : 0..1 | `SET NULL` |
+
+`finding` ↔ `reference` is an n : m relationship via `finding_reference`. The code ensures that every finding affects at least one reference (SQLite cannot enforce this).
+
+**Delete chains:** Deleting a project → everything in the project. Deleting an upload → its references, findings, finding–reference links and suggestions; other uploads and all `publication` rows remain.
