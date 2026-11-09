@@ -8,7 +8,7 @@ uvicorn>=0.29.0
 python-multipart>=0.0.9
 
 # Datenbank
-neo4j>=5.0.0
+# sqlite3 ist in Python enthalten
 
 # Testing & Linting
 pytest>=7.4.0

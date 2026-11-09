@@ -56,13 +56,11 @@ Folgt mit dem ersten Release. Geplant sind fertige Programme für **Windows** un
 |---------|-------------|------------|
 | Backend | Python + FastAPI | Vorgabe Python (RB4), FastAPI für REST API |
 | Frontend | Vue 3 | Modernes Framework, gute Dokumentation |
-| Datenbank | Neo4j Community Edition (GPL v3) | Graphdatenbank für Zitiernetzwerk und Beziehungen zwischen Quellen |
+| Datenbank | SQLite | In Python enthalten, keine Installation nötig, läuft lokal |
 | BibTeX-Import | bibtexparser | Etablierte Python-Bibliothek für .bib-Dateien |
 | PDF-Import | pdfplumber | Zuverlässige Textextraktion aus PDFs |
 | Tests | pytest | Standard-Testframework für Python |
 | Linting | black + flake8 | Einheitliche Codeformatierung im Team |
-
-> **Voraussetzung:** Neo4j Community Edition muss lokal installiert sein bevor die Anwendung gestartet wird. Download unter [neo4j.com/download](https://neo4j.com/download/).
 
 ## Projektstruktur
 
