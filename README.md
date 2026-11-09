@@ -54,8 +54,8 @@ Folgt mit dem ersten Release. Geplant sind fertige Programme für **Windows** un
 
 | Bereich | Technologie | Begründung |
 |---------|-------------|------------|
-| Sprache | Python | Vorgabe (RB4) |
-| GUI | PyQt6 | Plattformübergreifend (Windows + macOS), aktiv gepflegt |
+| Backend | Python + FastAPI | Vorgabe Python (RB4), FastAPI für REST API |
+| Frontend | Vue 3 | Modernes Framework, gute Dokumentation |
 | Datenbank | Neo4j Community Edition (GPL v3) | Graphdatenbank für Zitiernetzwerk und Beziehungen zwischen Quellen |
 | BibTeX-Import | bibtexparser | Etablierte Python-Bibliothek für .bib-Dateien |
 | PDF-Import | pdfplumber | Zuverlässige Textextraktion aus PDFs |
@@ -68,8 +68,12 @@ Folgt mit dem ersten Release. Geplant sind fertige Programme für **Windows** un
 
 ```
 BOBR/
-├── src/
-│   ├── main.py                  # Einstiegspunkt der Anwendung
+├── backend/
+│   ├── main.py                  # FastAPI Einstiegspunkt
+│   ├── api/                     # REST API Routen
+│   │   ├── import_routes.py
+│   │   ├── validator_routes.py
+│   │   └── correction_routes.py
 │   ├── model/                   # Daten, Importlogik, Validierung, Datenbankzugriff
 │   │   ├── literature.py        # Datenmodell für Literatureinträge
 │   │   ├── importer/            # Datei-Import (.bib, .txt, .pdf)
@@ -82,15 +86,21 @@ BOBR/
 │   │   │   └── correctness.py
 │   │   └── database/            # Neo4j-Datenbankanbindung
 │   │       └── db.py
-│   ├── view/                    # GUI-Komponenten (PyQt6)
-│   │   ├── main_window.py
-│   │   ├── import_view.py
-│   │   └── results_view.py
-│   └── controller/              # Steuerung des Ablaufs zwischen Model und View
-│       ├── app_controller.py
+│   └── controller/              # Steuerung des Ablaufs zwischen Model und API
 │       ├── import_controller.py
 │       ├── validator_controller.py
 │       └── correction_controller.py
+├── frontend/
+│   ├── src/
+│   │   ├── main.js              # Vue Einstiegspunkt
+│   │   ├── App.vue
+│   │   ├── views/               # Seiten
+│   │   │   ├── ImportView.vue
+│   │   │   └── ResultsView.vue
+│   │   ├── components/          # Wiederverwendbare UI-Komponenten
+│   │   └── services/            # API-Aufrufe ans Backend
+│   │       └── api.js
+│   └── package.json
 ├── tests/                       # Unit- und Integrationstests (pytest)
 ├── docs/                        # Anforderungen und Architekturdokumente
 ├── .gitignore
