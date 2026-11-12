@@ -48,14 +48,36 @@ flowchart LR
 
 ## Installation
 
-Folgt mit dem ersten Release. Geplant sind fertige Programme für **Windows** und **macOS** zum Download unter [Releases](../../releases).
+**Voraussetzungen:** Python 3.11+, Node.js 18+
+
+**Backend starten:**
+```bash
+python -m venv .venv
+source .venv/bin/activate  # macOS
+.venv\Scripts\activate     # Windows
+pip install -r requirements.txt
+cd backend
+uvicorn main:app --reload
+```
+
+**Frontend starten:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Danach:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- API-Dokumentation: `http://localhost:8000/docs`
 
 ## Technologie
 
 | Bereich | Technologie | Begründung |
 |---------|-------------|------------|
 | Backend | Python + FastAPI | Vorgabe Python (RB4), FastAPI für REST API |
-| Frontend | Vue 3 | Modernes Framework, gute Dokumentation |
+| Frontend | Vue 3 + Tailwind CSS | Modernes Framework, Tailwind für flexibles Styling |
 | Datenbank | SQLite | In Python enthalten, keine Installation nötig, läuft lokal |
 | BibTeX-Import | bibtexparser | Etablierte Python-Bibliothek für .bib-Dateien |
 | PDF-Import | pdfplumber | Zuverlässige Textextraktion aus PDFs |
