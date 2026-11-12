@@ -48,28 +48,63 @@ flowchart LR
 
 ## Installation
 
-Folgt mit dem ersten Release. Geplant sind fertige Programme für **Windows** und **macOS** zum Download unter [Releases](../../releases).
+**Voraussetzungen:** Python 3.11+, Node.js 18+
+
+**Backend starten:**
+```bash
+python -m venv .venv
+source .venv/bin/activate  # macOS
+.venv\Scripts\activate     # Windows
+pip install -r requirements.txt
+cd backend
+uvicorn main:app --reload
+```
+
+**Frontend starten:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+**Frontend testen:**
+```bash
+cd frontend
+npm test
+```
+
+Tests befinden sich in `frontend/src/tests/`:
+- `ImportView.test.js` — Dateiauswahl, Anzeige, Navigation (4 Tests)
+- `ResultsView.test.js` — Anzeige, Annehmen/Ablehnen, Leerzustand (5 Tests)
+- `api.test.js` — API-Aufrufe mit gemocktem axios (4 Tests)
+
+Danach:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- API-Dokumentation: `http://localhost:8000/docs`
 
 ## Technologie
 
 | Bereich | Technologie | Begründung |
 |---------|-------------|------------|
-| Sprache | Python | Vorgabe (RB4) |
-| GUI | PyQt6 | Plattformübergreifend (Windows + macOS), aktiv gepflegt |
-| Datenbank | Neo4j Community Edition (GPL v3) | Graphdatenbank für Zitiernetzwerk und Beziehungen zwischen Quellen |
+| Backend | Python + FastAPI | Vorgabe Python (RB4), FastAPI für REST API |
+| Frontend | Vue 3 + Tailwind CSS | Modernes Framework, Tailwind für flexibles Styling |
+| Datenbank | SQLite | In Python enthalten, keine Installation nötig, läuft lokal |
 | BibTeX-Import | bibtexparser | Etablierte Python-Bibliothek für .bib-Dateien |
 | PDF-Import | pdfplumber | Zuverlässige Textextraktion aus PDFs |
 | Tests | pytest | Standard-Testframework für Python |
 | Linting | black + flake8 | Einheitliche Codeformatierung im Team |
 
-> **Voraussetzung:** Neo4j Community Edition muss lokal installiert sein bevor die Anwendung gestartet wird. Download unter [neo4j.com/download](https://neo4j.com/download/).
-
 ## Projektstruktur
 
 ```
 BOBR/
-├── src/
-│   ├── main.py                  # Einstiegspunkt der Anwendung
+├── backend/
+│   ├── main.py                  # FastAPI Einstiegspunkt
+│   ├── api/                     # REST API Routen
+│   │   ├── import_routes.py
+│   │   ├── validator_routes.py
+│   │   └── correction_routes.py
 │   ├── model/                   # Daten, Importlogik, Validierung, Datenbankzugriff
 │   │   ├── literature.py        # Datenmodell für Literatureinträge
 │   │   ├── importer/            # Datei-Import (.bib, .txt, .pdf)
@@ -82,15 +117,21 @@ BOBR/
 │   │   │   └── correctness.py
 │   │   └── database/            # Neo4j-Datenbankanbindung
 │   │       └── db.py
-│   ├── view/                    # GUI-Komponenten (PyQt6)
-│   │   ├── main_window.py
-│   │   ├── import_view.py
-│   │   └── results_view.py
-│   └── controller/              # Steuerung des Ablaufs zwischen Model und View
-│       ├── app_controller.py
+│   └── controller/              # Steuerung des Ablaufs zwischen Model und API
 │       ├── import_controller.py
 │       ├── validator_controller.py
 │       └── correction_controller.py
+├── frontend/
+│   ├── src/
+│   │   ├── main.js              # Vue Einstiegspunkt
+│   │   ├── App.vue
+│   │   ├── views/               # Seiten
+│   │   │   ├── ImportView.vue
+│   │   │   └── ResultsView.vue
+│   │   ├── components/          # Wiederverwendbare UI-Komponenten
+│   │   └── services/            # API-Aufrufe ans Backend
+│   │       └── api.js
+│   └── package.json
 ├── tests/                       # Unit- und Integrationstests (pytest)
 ├── docs/                        # Anforderungen und Architekturdokumente
 ├── .gitignore

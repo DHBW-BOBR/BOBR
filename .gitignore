@@ -29,3 +29,14 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Node.js / Vue
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Umgebungsvariablen
+.env
+.env.local
