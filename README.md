@@ -67,6 +67,17 @@ npm install
 npm run dev
 ```
 
+**Frontend testen:**
+```bash
+cd frontend
+npm test
+```
+
+Tests befinden sich in `frontend/src/tests/`:
+- `ImportView.test.js` — Dateiauswahl, Anzeige, Navigation (4 Tests)
+- `ResultsView.test.js` — Anzeige, Annehmen/Ablehnen, Leerzustand (5 Tests)
+- `api.test.js` — API-Aufrufe mit gemocktem axios (4 Tests)
+
 Danach:
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:8000`
