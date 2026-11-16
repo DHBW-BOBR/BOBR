@@ -1,6 +1,6 @@
 [tool.pytest.ini_options]
-# src/ ist das Source-Root (Importe laufen als `from model...`, `from controller...`).
-pythonpath = ["src"]
+# backend/ ist das Source-Root (Importe laufen als `from backend...`).
+pythonpath = ["."]
 testpaths = ["tests"]
 
 [tool.black]

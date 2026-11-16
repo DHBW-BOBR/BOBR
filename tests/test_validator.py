@@ -1,95 +1,96 @@
-"""Tests für Formatprüfungen und den Korrektheits-Validator (Issue 3)."""
+"""Tests für die vier Prüfungen. Crossref wird abgeschaltet oder gemockt (kein Netz)."""
 
-from model.literature import LiteratureEntry
-from model.validator.correctness import CorrectnessValidator
-from model.validator import format_checks as fc
-
-# --- DOI -------------------------------------------------------------------
+from backend.validator import Validator
 
 
-def test_doi_valid():
-    assert fc.is_valid_doi("10.1000/xyz123")
-    assert fc.is_valid_doi("https://doi.org/10.1000/xyz123")
-    assert fc.is_valid_doi("doi:10.1109/5.771073")
+def check(entries):
+    return Validator(use_crossref=False).check(entries)
 
 
-def test_doi_invalid():
-    assert not fc.is_valid_doi("not-a-doi")
-    assert not fc.is_valid_doi("10.12/x")  # Registrant zu kurz
-    assert not fc.is_valid_doi("11.1000/xyz123")  # falsches Präfix
-    assert not fc.is_valid_doi("10.1000/")  # kein Suffix
-
-
-# --- ISBN ------------------------------------------------------------------
-
-
-def test_isbn10_valid():
-    assert fc.is_valid_isbn10("0-306-40615-2")
-    assert fc.is_valid_isbn10("080442957X")  # Prüfziffer X
-
-
-def test_isbn10_invalid():
-    assert not fc.is_valid_isbn10("0306406153")  # falsche Prüfziffer
-    assert not fc.is_valid_isbn10("030640615")  # zu kurz
-
-
-def test_isbn13_valid():
-    assert fc.is_valid_isbn13("978-3-16-148410-0")
-
-
-def test_isbn13_invalid():
-    assert not fc.is_valid_isbn13("978-3-16-148410-1")  # falsche Prüfziffer
-    assert not fc.is_valid_isbn13("978316148410")  # zu kurz
-
-
-def test_isbn_dispatch():
-    assert fc.is_valid_isbn("0-306-40615-2")
-    assert fc.is_valid_isbn("978-3-16-148410-0")
-    assert not fc.is_valid_isbn("12345")
-
-
-# --- URL -------------------------------------------------------------------
-
-
-def test_url_valid():
-    assert fc.is_valid_url("https://example.org/pfad")
-    assert fc.is_valid_url("http://localhost")
-
-
-def test_url_invalid():
-    assert not fc.is_valid_url("htp:/broken")
-    assert not fc.is_valid_url("ftp://example.org")
-    assert not fc.is_valid_url("https://")
-    assert not fc.is_valid_url("kein link")
-
-
-# --- CorrectnessValidator --------------------------------------------------
-
-
-def test_validator_flags_bad_fields_per_entry():
-    bad = LiteratureEntry(
-        "book",
-        {"doi": "not-a-doi", "isbn": "978-3-16-148410-1", "url": "htp:/broken"},
+def test_completeness_missing_fields():
+    findings = check(
+        [{"ENTRYTYPE": "article", "ID": "a", "title": "T", "year": "2020"}]
     )
-    good = LiteratureEntry(
-        "article",
+    comp = [f for f in findings if f["category"] == "completeness"]
+    assert comp and "author" in comp[0]["message"]
+
+
+def test_doi_format_invalid():
+    findings = check(
+        [
+            {
+                "ENTRYTYPE": "misc",
+                "ID": "a",
+                "author": "X",
+                "title": "T",
+                "year": "2020",
+                "doi": "not-a-doi",
+            }
+        ]
+    )
+    assert any(f["category"] == "correctness" and "DOI" in f["field"] for f in findings)
+
+
+def test_isbn_checksum():
+    base = {
+        "ENTRYTYPE": "book",
+        "ID": "a",
+        "author": "X",
+        "title": "T",
+        "year": "2020",
+        "publisher": "P",
+    }
+    bad = check([{**base, "isbn": "978-3-16-148410-1"}])  # falsche Prüfziffer
+    good = check([{**base, "isbn": "978-3-16-148410-0"}])  # korrekt
+    assert any("ISBN" in f["message"] for f in bad)
+    assert not any("ISBN" in f["message"] for f in good)
+
+
+def test_duplicates():
+    entries = [
         {
-            "doi": "10.1000/xyz123",
-            "isbn": "978-3-16-148410-0",
-            "url": "https://example.org/x",
+            "ENTRYTYPE": "article",
+            "ID": "a",
+            "author": "X",
+            "title": "Deep Learning for Cats",
+            "journal": "J",
+            "year": "2020",
         },
+        {
+            "ENTRYTYPE": "article",
+            "ID": "b",
+            "author": "Y",
+            "title": "Deep Learning for Cats",
+            "journal": "J",
+            "year": "2021",
+        },
+    ]
+    assert any(f["field"] == "Duplikat" for f in check(entries))
+
+
+def test_crossref_mocked(monkeypatch):
+    monkeypatch.setattr(
+        Validator,
+        "_check_crossref",
+        lambda self, e: ("Jahr weicht ab", "2020 ≠ 2021", "year = 2021"),
     )
-
-    findings = CorrectnessValidator().validate([bad, good])
-
-    assert len(findings) == 3  # 3 fehlerhafte Felder, alle im "bad"-Eintrag
-    assert len(bad.issues) == 3  # Befunde pro Eintrag angehängt
-    assert len(good.issues) == 0
-    assert {f.field for f in bad.issues} == {"doi", "isbn", "url"}
-
-
-def test_validator_ignores_empty_fields():
-    entry = LiteratureEntry("misc", {"doi": "", "title": "ohne ids"})
-    findings = CorrectnessValidator().validate([entry])
-    assert findings == []
-    assert entry.issues == []
+    v = Validator(use_crossref=True, rate_limit=0)
+    findings = v.check(
+        [
+            {
+                "ENTRYTYPE": "article",
+                "ID": "a",
+                "author": "X",
+                "title": "T",
+                "journal": "J",
+                "year": "2020",
+                "doi": "10.1/x",
+            }
+        ]
+    )
+    hit = [
+        f
+        for f in findings
+        if f["category"] == "consistency" and f["field"] == "Crossref"
+    ]
+    assert hit and hit[0]["suggestion"] == "year = 2021"
