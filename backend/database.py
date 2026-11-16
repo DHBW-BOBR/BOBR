@@ -1,114 +1,86 @@
-"""SQLite-Persistenz – ein Ausschnitt aus Lukas' Datenbankschema.
+"""SQLite-Persistenz auf Basis von Lukas' Datenbankschema.
 
-Umgesetzt sind die Tabellen ``project``, ``upload``, ``reference`` und ``finding``
-(das Nötige für den aktuellen Ablauf: Datei hochladen → Quellen speichern → prüfen →
-Findings annehmen/ablehnen). Nicht umgesetzt sind vorerst ``publication``,
-``publication_citation``, ``suggestion``, ``finding_reference``, ``rule_setting`` und
-``involved_person``.
+Die Struktur wird **nicht** hier definiert: Eine frische DB übernimmt sie direkt
+aus Lukas' ``bobr.sqlite`` (liegt als Vorlage neben diesem Modul) per SQLite-
+``backup``. Dadurch verwenden backend/ und Lukas' Schema garantiert dieselben
+Tabellen/Constraints, ohne das Schema doppelt zu pflegen.
 
-Gegenüber dem vollen Schema bewusst vereinfacht:
-* Es gibt genau ein Default-Projekt; keine Projektverwaltung.
-* Welche Quelle ein Finding betrifft, steht (noch) nur im Text, nicht als
-  ``finding_reference``-Verknüpfung.
+Geschrieben wird in den für den aktuellen Ablauf nötigen Teil:
+``project`` (ein Default-Projekt), ``upload``, ``reference`` sowie je Prüfung
+``finding`` + ``finding_reference`` (betroffene Quelle) + ``suggestion``
+(Korrekturvorschlag). Die übrigen Tabellen (``publication`` usw.) existieren,
+werden aber noch nicht befüllt.
 
-Die bibliografischen Daten werden als **CSL-JSON** in ``reference.data_original`` und
-``reference.data_current`` abgelegt (Umwandlung aus dem bibtexparser-Dict hier in
-diesem Modul). Zeitstempel sind UTC-Text ``YYYY-MM-DD HH:MM:SS``.
+Bibliografische Daten gehen als **CSL-JSON** in ``reference.data_original`` /
+``data_current`` (Umwandlung hier). Zeitstempel sind UTC-Text.
 """
 
+import hashlib
 import json
 import re
 import sqlite3
 from datetime import datetime, timezone
+from pathlib import Path
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS project (
-    id              INTEGER PRIMARY KEY,
-    name            TEXT NOT NULL,
-    created_at      TEXT NOT NULL,
-    citation_style  TEXT
-);
+# Lukas' leere DB; ihre Struktur wird in neue Datenbanken kopiert.
+TEMPLATE_PATH = Path(__file__).with_name("bobr.sqlite")
 
-CREATE TABLE IF NOT EXISTS upload (
-    id          INTEGER PRIMARY KEY,
-    project_id  INTEGER NOT NULL REFERENCES project(id) ON DELETE CASCADE,
-    file_name   TEXT NOT NULL,
-    file_hash   TEXT NOT NULL,
-    file_content BLOB NOT NULL,
-    format      TEXT NOT NULL,
-    uploaded_at TEXT NOT NULL,
-    last_check_started_at  TEXT,
-    last_check_finished_at TEXT
-);
+# Nach dem Merge auf main liegt Lukas' bobr.sqlite unter src/model/database/.
+# Dann die Zeile oben durch die folgende ersetzen und backend/bobr.sqlite löschen,
+# damit es nur noch *eine* Schema-Quelle gibt:
+# TEMPLATE_PATH = Path(__file__).resolve().parents[1] / "src" / "model" / "database" / "bobr.sqlite"
 
-CREATE TABLE IF NOT EXISTS reference (
-    id            INTEGER PRIMARY KEY,
-    upload_id     INTEGER NOT NULL REFERENCES upload(id) ON DELETE CASCADE,
-    position      INTEGER NOT NULL,
-    citekey       TEXT,
-    raw_text      TEXT NOT NULL,
-    data_original TEXT NOT NULL CHECK (json_valid(data_original)),
-    data_current  TEXT NOT NULL CHECK (json_valid(data_current)),
-    reference_type    TEXT,
-    doi_norm          TEXT,
-    title_norm        TEXT,
-    year              INTEGER,
-    first_author_norm TEXT,
-    updated_at    TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS finding (
-    id          INTEGER PRIMARY KEY,
-    upload_id   INTEGER NOT NULL REFERENCES upload(id) ON DELETE CASCADE,
-    rule_id     TEXT NOT NULL,
-    category    TEXT NOT NULL,
-    severity    TEXT NOT NULL,
-    field       TEXT,
-    message     TEXT NOT NULL,
-    suggestion  TEXT,
-    confidence  TEXT NOT NULL,
-    fingerprint TEXT NOT NULL,
-    status      TEXT NOT NULL DEFAULT 'open',
-    decided_at  TEXT,
-    UNIQUE (upload_id, fingerprint)
-);
-"""
+# Version der Prüfregeln; wandert mit in jedes Finding (Schema: finding.rule_version).
+RULE_VERSION = 1
 
 
-def _now() -> str:
+def now():
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
 class Database:
-    """Dünne SQLite-Schicht. Standard ist eine In-Memory-DB (nichts wird persistiert);
-    mit ``Database("bobr.db")`` wird in eine Datei geschrieben."""
+    """Dünne SQLite-Schicht auf Lukas' Schema. Standard ist eine In-Memory-DB
+    (nichts wird persistiert); ``Database("bobr.db")`` schreibt in eine Datei."""
 
-    def __init__(self, path: str = ":memory:"):
+    def __init__(self, path=":memory:"):
         self.conn = sqlite3.connect(path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
+        if not self._has_schema():
+            self._load_template()  # leere DB -> Struktur aus Lukas' Vorlage holen
         self.conn.execute("PRAGMA foreign_keys = ON")
-        self.conn.executescript(SCHEMA)
         self.project_id = self._ensure_project()
+        # Pro Upload gemerkt: entry_id (citekey bzw. refN) -> reference.id
+        self._ref_ids = {}
 
-    def _ensure_project(self) -> int:
+    def _has_schema(self):
+        row = self.conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='upload'"
+        ).fetchone()
+        return row is not None
+
+    def _load_template(self):
+        # Vorlage nur lesen und ihre Struktur in die neue DB kopieren.
+        template = sqlite3.connect(str(TEMPLATE_PATH))
+        try:
+            template.backup(self.conn)
+        finally:
+            template.close()
+
+    def _ensure_project(self):
         row = self.conn.execute("SELECT id FROM project LIMIT 1").fetchone()
         if row:
             return row["id"]
         cur = self.conn.execute(
             "INSERT INTO project (name, created_at) VALUES (?, ?)",
-            ("BOBR-Projekt", _now()),
+            ("BOBR-Projekt", now()),
         )
         self.conn.commit()
         return cur.lastrowid
 
     # ------------------------------------------------------------------ Upload
 
-    def save_upload(
-        self, file_name: str, content: bytes, fmt: str, entries: list[dict]
-    ) -> int:
-        import hashlib
-
-        now = _now()
+    def save_upload(self, file_name, content, fmt, entries):
+        created = now()
         cur = self.conn.execute(
             """INSERT INTO upload
                    (project_id, file_name, file_hash, file_content, format, uploaded_at)
@@ -119,15 +91,17 @@ class Database:
                 hashlib.sha256(content).hexdigest(),
                 content,
                 fmt,
-                now,
+                created,
             ),
         )
         upload_id = cur.lastrowid
+        ref_ids = {}
 
-        for position, e in enumerate(entries, start=1):
-            csl = to_csl(e)
-            data = json.dumps(csl, ensure_ascii=False)
-            self.conn.execute(
+        position = 1
+        for entry in entries:
+            data = json.dumps(to_csl(entry), ensure_ascii=False)
+            citekey = entry.get("ID") if fmt == "bib" else None
+            ref_cur = self.conn.execute(
                 """INSERT INTO reference
                    (upload_id, position, citekey, raw_text, data_original, data_current,
                     reference_type, doi_norm, title_norm, year, first_author_norm, updated_at)
@@ -135,77 +109,115 @@ class Database:
                 (
                     upload_id,
                     position,
-                    e.get("ID") if fmt == "bib" else None,
-                    e.get("raw_text") or data,
+                    citekey,
+                    entry.get("raw_text") or data,
                     data,
                     data,
-                    e.get("ENTRYTYPE") or None,
-                    _norm_doi(e.get("doi")),
-                    _norm_text(e.get("title")),
-                    _norm_year(e.get("year")),
-                    _norm_author(e.get("author")),
-                    now,
+                    entry.get("ENTRYTYPE") or None,
+                    norm_doi(entry.get("doi")),
+                    norm_text(entry.get("title")),
+                    norm_year(entry.get("year")),
+                    norm_author(entry.get("author")),
+                    created,
                 ),
             )
+            if entry.get("ID"):
+                ref_ids[entry["ID"]] = ref_cur.lastrowid
+            position += 1
+
+        self._ref_ids[upload_id] = ref_ids
         self.conn.commit()
         return upload_id
 
     # ------------------------------------------------------------------ Findings
 
-    def save_findings(self, upload_id: int, findings: list[dict]) -> list[dict]:
-        """Speichert die Findings einer Prüfung und gibt sie mit DB-``id`` zurück."""
+    def save_findings(self, upload_id, findings):
+        """Speichert die Findings einer Prüfung (+ betroffene Quelle + Vorschlag)
+        und gibt sie mit DB-``id`` zurück."""
         self.conn.execute(
             "UPDATE upload SET last_check_started_at = ? WHERE id = ?",
-            (_now(), upload_id),
+            (now(), upload_id),
         )
-        # Offene (noch nicht entschiedene) Findings der letzten Prüfung verwerfen.
+        # Offene (noch nicht entschiedene) Findings der letzten Prüfung verwerfen;
+        # akzeptierte/abgelehnte bleiben erhalten.
         self.conn.execute(
             "DELETE FROM finding WHERE upload_id = ? AND status = 'open'", (upload_id,)
         )
-
+        ref_ids = self._ref_ids.get(upload_id, {})
         saved = []
+
         for f in findings:
             fingerprint = f"{f['rule_id']}:{f.get('field', '')}:{f.get('entry_id', '')}"
             cur = self.conn.execute(
                 """INSERT OR IGNORE INTO finding
-                   (upload_id, rule_id, category, severity, field, message, suggestion,
-                    confidence, fingerprint)
+                   (upload_id, rule_id, rule_version, category, severity, field,
+                    message, confidence, fingerprint)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     upload_id,
                     f["rule_id"],
+                    f.get("rule_version", RULE_VERSION),
                     f["category"],
                     f["severity"],
                     f.get("field"),
                     f["message"],
-                    f.get("suggestion"),
                     f["confidence"],
                     fingerprint,
                 ),
             )
-            if cur.rowcount:  # 1 = eingefügt, 0 = wegen UNIQUE ignoriert
-                saved.append({**f, "id": cur.lastrowid})
+            if not cur.rowcount:  # wegen UNIQUE(upload_id, fingerprint) ignoriert
+                continue
+            finding_id = cur.lastrowid
+
+            # Betroffene Quelle verknüpfen (n:m über finding_reference)
+            ref_id = ref_ids.get(f.get("entry_id"))
+            if ref_id:
+                self.conn.execute(
+                    "INSERT OR IGNORE INTO finding_reference (finding_id, reference_id) "
+                    "VALUES (?, ?)",
+                    (finding_id, ref_id),
+                )
+
+            # Korrekturvorschlag als eigene Zeile (Schema trennt finding/suggestion)
+            suggestion = f.get("suggestion")
+            if suggestion:
+                self.conn.execute(
+                    """INSERT INTO suggestion (finding_id, rank, changes, label, is_chosen)
+                       VALUES (?, 1, ?, ?, 0)""",
+                    (finding_id, json.dumps(parse_changes(suggestion)), suggestion),
+                )
+
+            saved.append({**f, "id": finding_id})
 
         self.conn.execute(
             "UPDATE upload SET last_check_finished_at = ? WHERE id = ?",
-            (_now(), upload_id),
+            (now(), upload_id),
         )
         self.conn.commit()
         return saved
 
-    def set_status(self, finding_id: int, status: str) -> None:
+    def set_status(self, finding_id, status):
         self.conn.execute(
             "UPDATE finding SET status = ?, decided_at = ? WHERE id = ?",
-            (status, _now(), finding_id),
+            (status, now(), finding_id),
         )
         self.conn.commit()
+
+
+def parse_changes(suggestion):
+    """Macht aus einem Vorschlag wie ``"year = 2021"`` die Änderung
+    ``{"year": "2021"}``; rein beratende Texte ergeben ``{}`` (changes ist NOT NULL)."""
+    match = re.match(r"\s*([A-Za-z_]+)\s*=\s*(.+)", suggestion)
+    if match:
+        return {match.group(1): match.group(2).strip()}
+    return {}
 
 
 # ---------------------------------------------------------------------------
 # bibtexparser-Dict  ->  CSL-JSON  (nur an der DB-Grenze)
 # ---------------------------------------------------------------------------
 
-_CSL_TYPE = {
+CSL_TYPE = {
     "article": "article-journal",
     "book": "book",
     "inbook": "chapter",
@@ -219,49 +231,60 @@ _CSL_TYPE = {
 }
 
 
-def to_csl(e: dict) -> dict:
+def to_csl(entry):
     """Wandelt einen bibtexparser-Eintrag in ein (minimales) CSL-JSON-Objekt."""
-    csl: dict = {"type": _CSL_TYPE.get((e.get("ENTRYTYPE") or "").lower(), "document")}
-    if e.get("ID"):
-        csl["id"] = e["ID"]
-    if title := e.get("title"):
-        csl["title"] = title
-    if authors := _csl_authors(e.get("author")):
+    entry_type = (entry.get("ENTRYTYPE") or "").lower()
+    csl = {"type": CSL_TYPE.get(entry_type, "document")}
+
+    if entry.get("ID"):
+        csl["id"] = entry["ID"]
+    if entry.get("title"):
+        csl["title"] = entry["title"]
+
+    authors = csl_authors(entry.get("author"))
+    if authors:
         csl["author"] = authors
-    if year := _norm_year(e.get("year")):
+
+    year = norm_year(entry.get("year"))
+    if year:
         csl["issued"] = {"date-parts": [[year]]}
-    if container := (e.get("journal") or e.get("booktitle")):
+
+    container = entry.get("journal") or entry.get("booktitle")
+    if container:
         csl["container-title"] = container
-    for src, dst in (
+
+    for source_key, csl_key in (
         ("publisher", "publisher"),
         ("doi", "DOI"),
         ("isbn", "ISBN"),
         ("url", "URL"),
     ):
-        if val := e.get(src):
-            csl[dst] = val
+        value = entry.get(source_key)
+        if value:
+            csl[csl_key] = value
+
     return csl
 
 
-def _csl_authors(author: str | None) -> list[dict]:
+def csl_authors(author):
+    """ "Nachname, Vorname and …" -> Liste von {family, given}."""
     if not author:
         return []
-    out = []
+    authors = []
     for name in re.split(r"\s+and\s+", author):
         name = name.strip()
         if not name:
             continue
         if "," in name:
-            family, given = (p.strip() for p in name.split(",", 1))
-            out.append({"family": family, "given": given})
+            family, given = name.split(",", 1)
+            authors.append({"family": family.strip(), "given": given.strip()})
         else:
             parts = name.split()
-            out.append(
-                {"family": parts[-1], "given": " ".join(parts[:-1])}
-                if len(parts) > 1
-                else {"family": name}
-            )
-    return out
+            if len(parts) > 1:
+                authors.append({"family": parts[-1], "given": " ".join(parts[:-1])})
+            else:
+                authors.append({"family": name})
+    return authors
 
 
 # ---------------------------------------------------------------------------
@@ -269,25 +292,34 @@ def _csl_authors(author: str | None) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
-def _norm_doi(doi: str | None) -> str | None:
-    return doi.strip().lower() if doi else None
+def norm_doi(doi):
+    if not doi:
+        return None
+    return doi.strip().lower()
 
 
-def _norm_text(text: str | None) -> str | None:
-    return re.sub(r"\s+", " ", text).strip().lower() if text else None
+def norm_text(text):
+    if not text:
+        return None
+    return re.sub(r"\s+", " ", text).strip().lower()
 
 
-def _norm_year(year) -> int | None:
+def norm_year(year):
     if year is None:
         return None
-    m = re.search(r"(19|20)\d{2}", str(year))
-    return int(m.group(0)) if m else None
+    match = re.search(r"(19|20)\d{2}", str(year))
+    if match:
+        return int(match.group(0))
+    return None
 
 
-def _norm_author(author: str | None) -> str | None:
+def norm_author(author):
     """Nachname des ersten Autors, kleingeschrieben."""
     if not author:
         return None
     first = re.split(r"\s+and\s+", author.strip())[0]
-    family = first.split(",")[0].strip() if "," in first else first.split()[-1]
+    if "," in first:
+        family = first.split(",")[0].strip()
+    else:
+        family = first.split()[-1]
     return family.lower() or None

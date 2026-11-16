@@ -1,8 +1,26 @@
-"""Tests für die SQLite-Schicht: CSL-JSON, abgeleitete Spalten, Status, Idempotenz."""
+"""Tests für die SQLite-Schicht auf Lukas' Schema:
+CSL-JSON, abgeleitete Spalten, Findings mit finding_reference + suggestion, Status."""
 
 import json
 
 from backend.database import Database
+
+
+def test_schema_has_all_tables():
+    db = Database()
+    tables = {
+        r["name"]
+        for r in db.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    }
+    assert {
+        "project",
+        "upload",
+        "reference",
+        "finding",
+        "finding_reference",
+        "suggestion",
+        "publication",
+    } <= tables
 
 
 def test_save_upload_creates_reference_with_csl_and_norms():
@@ -29,6 +47,53 @@ def test_save_upload_creates_reference_with_csl_and_norms():
     assert csl["type"] == "article-journal"
     assert csl["author"][0]["family"] == "Smith"
     assert csl["issued"] == {"date-parts": [[2020]]}
+
+
+def test_finding_links_reference_and_suggestion():
+    db = Database()
+    up = db.save_upload(
+        "r.bib",
+        b"x",
+        "bib",
+        [{"ENTRYTYPE": "article", "ID": "a1", "title": "T", "year": "2020"}],
+    )
+    finding = {
+        "rule_id": "K20_crossref_match",
+        "category": "consistency",
+        "severity": "warning",
+        "field": "Crossref",
+        "message": "Jahr weicht ab bei a1",
+        "suggestion": "year = 2021",
+        "confidence": "likely",
+        "entry_id": "a1",
+    }
+
+    saved = db.save_findings(up, [finding])
+    fid = saved[0]["id"]
+
+    # rule_version wurde ergänzt (Schema: NOT NULL)
+    assert (
+        db.conn.execute(
+            "SELECT rule_version FROM finding WHERE id=?", (fid,)
+        ).fetchone()["rule_version"]
+        == 1
+    )
+
+    # finding_reference verknüpft das Finding mit der Quelle a1
+    link = db.conn.execute(
+        "SELECT reference_id FROM finding_reference WHERE finding_id=?", (fid,)
+    ).fetchone()
+    ref_id = db.conn.execute("SELECT id FROM reference WHERE citekey='a1'").fetchone()[
+        "id"
+    ]
+    assert link["reference_id"] == ref_id
+
+    # suggestion-Zeile: "year = 2021" -> strukturierte changes
+    sug = db.conn.execute(
+        "SELECT changes, label FROM suggestion WHERE finding_id=?", (fid,)
+    ).fetchone()
+    assert json.loads(sug["changes"]) == {"year": "2021"}
+    assert sug["label"] == "year = 2021"
 
 
 def test_findings_status_and_idempotency():

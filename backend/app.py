@@ -1,9 +1,9 @@
 """BOBR-Backend – FastAPI-Server.
 
-Verbindet Importer, Validator und die SQLite-Datenbank mit den vier Endpunkten, die
-das Vue-Frontend erwartet. Die Datenbank läuft standardmäßig In-Memory (nichts wird
-auf die Platte geschrieben), nutzt aber Lukas' Schema; die geparsten Einträge bleiben
-zusätzlich im Speicher, weil der Validator auf dem bibtexparser-Format arbeitet.
+Verbindet Importer, Validator und die SQLite-Datenbank mit den vier Endpunkten,
+die Mariekes Vue-Frontend erwartet. Die Datenbank läuft In-Memory; die geparsten
+Einträge bleiben zusätzlich im Speicher, weil der Validator auf dem
+bibtexparser-Format arbeitet.
 
 Starten:
     uvicorn backend.app:app --reload --port 8000
@@ -28,15 +28,15 @@ app.add_middleware(
 
 importer = Importer()
 validator = Validator()
-db = Database()  # In-Memory-SQLite; Database("bobr.db") würde persistieren.
+db = Database()  # In-Memory-SQLite
 
-# Aktueller Datensatz (der Validator arbeitet auf den bibtexparser-Dicts).
-_entries: list[dict] = []
-_upload_id: int | None = None
+# Aktueller Datensatz
+_entries = []
+_upload_id = None
 
 
-def to_frontend(f: dict) -> dict:
-    """Übersetzt ein internes Finding in das flache Format des Frontends."""
+def to_frontend(f):
+    """Übersetzt ein internes Finding in das Format des Frontends."""
     return {
         "id": f["id"],
         "type": "fehler" if f["severity"] == "error" else "warnung",
@@ -65,7 +65,7 @@ async def import_file(file: UploadFile = File(...)):
 @app.post("/api/validate/")
 async def validate():
     if not _entries or _upload_id is None:
-        raise HTTPException(status_code=400, detail="Zuerst eine Datei importieren")
+        raise HTTPException(status_code=400, detail="zuerst eine Datei importieren")
     findings = validator.check(_entries)
     saved = db.save_findings(_upload_id, findings)
     return [to_frontend(f) for f in saved]
