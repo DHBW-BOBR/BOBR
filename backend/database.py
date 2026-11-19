@@ -1,0 +1,325 @@
+"""SQLite-Persistenz auf Basis von Lukas' Datenbankschema.
+
+Die Struktur wird **nicht** hier definiert: Eine frische DB übernimmt sie direkt
+aus Lukas' ``bobr.sqlite`` (liegt als Vorlage neben diesem Modul) per SQLite-
+``backup``. Dadurch verwenden backend/ und Lukas' Schema garantiert dieselben
+Tabellen/Constraints, ohne das Schema doppelt zu pflegen.
+
+Geschrieben wird in den für den aktuellen Ablauf nötigen Teil:
+``project`` (ein Default-Projekt), ``upload``, ``reference`` sowie je Prüfung
+``finding`` + ``finding_reference`` (betroffene Quelle) + ``suggestion``
+(Korrekturvorschlag). Die übrigen Tabellen (``publication`` usw.) existieren,
+werden aber noch nicht befüllt.
+
+Bibliografische Daten gehen als **CSL-JSON** in ``reference.data_original`` /
+``data_current`` (Umwandlung hier). Zeitstempel sind UTC-Text.
+"""
+
+import hashlib
+import json
+import re
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+
+# Lukas' leere DB; ihre Struktur wird in neue Datenbanken kopiert.
+TEMPLATE_PATH = Path(__file__).with_name("bobr.sqlite")
+
+# Nach dem Merge auf main liegt Lukas' bobr.sqlite unter src/model/database/.
+# Dann die Zeile oben durch die folgende ersetzen und backend/bobr.sqlite löschen,
+# damit es nur noch *eine* Schema-Quelle gibt:
+# TEMPLATE_PATH = Path(__file__).resolve().parents[1] / "src" / "model" / "database" / "bobr.sqlite"
+
+# Version der Prüfregeln; wandert mit in jedes Finding (Schema: finding.rule_version).
+RULE_VERSION = 1
+
+
+def now():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
+class Database:
+    """Dünne SQLite-Schicht auf Lukas' Schema. Standard ist eine In-Memory-DB
+    (nichts wird persistiert); ``Database("bobr.db")`` schreibt in eine Datei."""
+
+    def __init__(self, path=":memory:"):
+        self.conn = sqlite3.connect(path, check_same_thread=False)
+        self.conn.row_factory = sqlite3.Row
+        if not self._has_schema():
+            self._load_template()  # leere DB -> Struktur aus Lukas' Vorlage holen
+        self.conn.execute("PRAGMA foreign_keys = ON")
+        self.project_id = self._ensure_project()
+        # Pro Upload gemerkt: entry_id (citekey bzw. refN) -> reference.id
+        self._ref_ids = {}
+
+    def _has_schema(self):
+        row = self.conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='upload'"
+        ).fetchone()
+        return row is not None
+
+    def _load_template(self):
+        # Vorlage nur lesen und ihre Struktur in die neue DB kopieren.
+        template = sqlite3.connect(str(TEMPLATE_PATH))
+        try:
+            template.backup(self.conn)
+        finally:
+            template.close()
+
+    def _ensure_project(self):
+        row = self.conn.execute("SELECT id FROM project LIMIT 1").fetchone()
+        if row:
+            return row["id"]
+        cur = self.conn.execute(
+            "INSERT INTO project (name, created_at) VALUES (?, ?)",
+            ("BOBR-Projekt", now()),
+        )
+        self.conn.commit()
+        return cur.lastrowid
+
+    # ------------------------------------------------------------------ Upload
+
+    def save_upload(self, file_name, content, fmt, entries):
+        created = now()
+        cur = self.conn.execute(
+            """INSERT INTO upload
+                   (project_id, file_name, file_hash, file_content, format, uploaded_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                self.project_id,
+                file_name,
+                hashlib.sha256(content).hexdigest(),
+                content,
+                fmt,
+                created,
+            ),
+        )
+        upload_id = cur.lastrowid
+        ref_ids = {}
+
+        position = 1
+        for entry in entries:
+            data = json.dumps(to_csl(entry), ensure_ascii=False)
+            citekey = entry.get("ID") if fmt == "bib" else None
+            ref_cur = self.conn.execute(
+                """INSERT INTO reference
+                   (upload_id, position, citekey, raw_text, data_original, data_current,
+                    reference_type, doi_norm, title_norm, year, first_author_norm, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    upload_id,
+                    position,
+                    citekey,
+                    entry.get("raw_text") or data,
+                    data,
+                    data,
+                    entry.get("ENTRYTYPE") or None,
+                    norm_doi(entry.get("doi")),
+                    norm_text(entry.get("title")),
+                    norm_year(entry.get("year")),
+                    norm_author(entry.get("author")),
+                    created,
+                ),
+            )
+            if entry.get("ID"):
+                ref_ids[entry["ID"]] = ref_cur.lastrowid
+            position += 1
+
+        self._ref_ids[upload_id] = ref_ids
+        self.conn.commit()
+        return upload_id
+
+    # ------------------------------------------------------------------ Findings
+
+    def save_findings(self, upload_id, findings):
+        """Speichert die Findings einer Prüfung (+ betroffene Quelle + Vorschlag)
+        und gibt sie mit DB-``id`` zurück."""
+        self.conn.execute(
+            "UPDATE upload SET last_check_started_at = ? WHERE id = ?",
+            (now(), upload_id),
+        )
+        # Offene (noch nicht entschiedene) Findings der letzten Prüfung verwerfen;
+        # akzeptierte/abgelehnte bleiben erhalten.
+        self.conn.execute(
+            "DELETE FROM finding WHERE upload_id = ? AND status = 'open'", (upload_id,)
+        )
+        ref_ids = self._ref_ids.get(upload_id, {})
+        saved = []
+
+        for f in findings:
+            fingerprint = f"{f['rule_id']}:{f.get('field', '')}:{f.get('entry_id', '')}"
+            cur = self.conn.execute(
+                """INSERT OR IGNORE INTO finding
+                   (upload_id, rule_id, rule_version, category, severity, field,
+                    message, confidence, fingerprint)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    upload_id,
+                    f["rule_id"],
+                    f.get("rule_version", RULE_VERSION),
+                    f["category"],
+                    f["severity"],
+                    f.get("field"),
+                    f["message"],
+                    f["confidence"],
+                    fingerprint,
+                ),
+            )
+            if not cur.rowcount:  # wegen UNIQUE(upload_id, fingerprint) ignoriert
+                continue
+            finding_id = cur.lastrowid
+
+            # Betroffene Quelle verknüpfen (n:m über finding_reference)
+            ref_id = ref_ids.get(f.get("entry_id"))
+            if ref_id:
+                self.conn.execute(
+                    "INSERT OR IGNORE INTO finding_reference (finding_id, reference_id) "
+                    "VALUES (?, ?)",
+                    (finding_id, ref_id),
+                )
+
+            # Korrekturvorschlag als eigene Zeile (Schema trennt finding/suggestion)
+            suggestion = f.get("suggestion")
+            if suggestion:
+                self.conn.execute(
+                    """INSERT INTO suggestion (finding_id, rank, changes, label, is_chosen)
+                       VALUES (?, 1, ?, ?, 0)""",
+                    (finding_id, json.dumps(parse_changes(suggestion)), suggestion),
+                )
+
+            saved.append({**f, "id": finding_id})
+
+        self.conn.execute(
+            "UPDATE upload SET last_check_finished_at = ? WHERE id = ?",
+            (now(), upload_id),
+        )
+        self.conn.commit()
+        return saved
+
+    def set_status(self, finding_id, status):
+        self.conn.execute(
+            "UPDATE finding SET status = ?, decided_at = ? WHERE id = ?",
+            (status, now(), finding_id),
+        )
+        self.conn.commit()
+
+
+def parse_changes(suggestion):
+    """Macht aus einem Vorschlag wie ``"year = 2021"`` die Änderung
+    ``{"year": "2021"}``; rein beratende Texte ergeben ``{}`` (changes ist NOT NULL)."""
+    match = re.match(r"\s*([A-Za-z_]+)\s*=\s*(.+)", suggestion)
+    if match:
+        return {match.group(1): match.group(2).strip()}
+    return {}
+
+
+# ---------------------------------------------------------------------------
+# bibtexparser-Dict  ->  CSL-JSON  (nur an der DB-Grenze)
+# ---------------------------------------------------------------------------
+
+CSL_TYPE = {
+    "article": "article-journal",
+    "book": "book",
+    "inbook": "chapter",
+    "incollection": "chapter",
+    "inproceedings": "paper-conference",
+    "conference": "paper-conference",
+    "phdthesis": "thesis",
+    "mastersthesis": "thesis",
+    "techreport": "report",
+    "misc": "document",
+}
+
+
+def to_csl(entry):
+    """Wandelt einen bibtexparser-Eintrag in ein (minimales) CSL-JSON-Objekt."""
+    entry_type = (entry.get("ENTRYTYPE") or "").lower()
+    csl = {"type": CSL_TYPE.get(entry_type, "document")}
+
+    if entry.get("ID"):
+        csl["id"] = entry["ID"]
+    if entry.get("title"):
+        csl["title"] = entry["title"]
+
+    authors = csl_authors(entry.get("author"))
+    if authors:
+        csl["author"] = authors
+
+    year = norm_year(entry.get("year"))
+    if year:
+        csl["issued"] = {"date-parts": [[year]]}
+
+    container = entry.get("journal") or entry.get("booktitle")
+    if container:
+        csl["container-title"] = container
+
+    for source_key, csl_key in (
+        ("publisher", "publisher"),
+        ("doi", "DOI"),
+        ("isbn", "ISBN"),
+        ("url", "URL"),
+    ):
+        value = entry.get(source_key)
+        if value:
+            csl[csl_key] = value
+
+    return csl
+
+
+def csl_authors(author):
+    """ "Nachname, Vorname and …" -> Liste von {family, given}."""
+    if not author:
+        return []
+    authors = []
+    for name in re.split(r"\s+and\s+", author):
+        name = name.strip()
+        if not name:
+            continue
+        if "," in name:
+            family, given = name.split(",", 1)
+            authors.append({"family": family.strip(), "given": given.strip()})
+        else:
+            parts = name.split()
+            if len(parts) > 1:
+                authors.append({"family": parts[-1], "given": " ".join(parts[:-1])})
+            else:
+                authors.append({"family": name})
+    return authors
+
+
+# ---------------------------------------------------------------------------
+# Abgeleitete (normalisierte) Spalten der reference-Tabelle
+# ---------------------------------------------------------------------------
+
+
+def norm_doi(doi):
+    if not doi:
+        return None
+    return doi.strip().lower()
+
+
+def norm_text(text):
+    if not text:
+        return None
+    return re.sub(r"\s+", " ", text).strip().lower()
+
+
+def norm_year(year):
+    if year is None:
+        return None
+    match = re.search(r"(19|20)\d{2}", str(year))
+    if match:
+        return int(match.group(0))
+    return None
+
+
+def norm_author(author):
+    """Nachname des ersten Autors, kleingeschrieben."""
+    if not author:
+        return None
+    first = re.split(r"\s+and\s+", author.strip())[0]
+    if "," in first:
+        family = first.split(",")[0].strip()
+    else:
+        family = first.split()[-1]
+    return family.lower() or None

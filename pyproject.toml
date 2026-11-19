@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+# backend/ ist das Source-Root (Importe laufen als `from backend...`).
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
