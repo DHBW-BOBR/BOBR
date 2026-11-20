@@ -20,12 +20,15 @@
     <div v-if="selectedFile" class="mt-6 p-4 bg-white border border-gray-200 rounded-lg flex items-center justify-between">
       <span class="text-sm text-gray-700">{{ selectedFile.name }}</span>
       <button
-        class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
+        class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+        :disabled="uploading"
         @click="uploadFile"
       >
-        Prüfung starten
+        {{ uploading ? 'Wird geprüft…' : 'Prüfung starten' }}
       </button>
     </div>
+
+    <p v-if="error" class="mt-4 text-sm text-red-600">{{ error }}</p>
   </div>
 </template>
 
@@ -65,9 +68,23 @@ const handleDrop = (e) => {
   selectedFile.value = e.dataTransfer.files[0]
 }
 
-/** Sendet die Datei ans Backend und navigiert zur Ergebnisseite. */
-const uploadFile = () => {
-  // API-Aufruf folgt
-  router.push('/results')
+import { importFile, runValidation } from '../services/api.js'
+
+const uploading = ref(false)
+const error = ref(null)
+
+/** Sendet die Datei ans Backend, startet die Validierung und navigiert zur Ergebnisseite. */
+const uploadFile = async () => {
+  uploading.value = true
+  error.value = null
+  try {
+    await importFile(selectedFile.value)
+    const response = await runValidation()
+    router.push({ path: '/results', state: { results: response.data } })
+  } catch (e) {
+    error.value = e.response?.data?.detail ?? 'Fehler beim Upload'
+  } finally {
+    uploading.value = false
+  }
 }
 </script>
