@@ -1,0 +1,50 @@
+% Demo-Datei fuer BOBR: enthaelt absichtlich gueltige UND fehlerhafte Felder,
+% um die Korrektheitspruefung (DOI / ISBN / URL) zu zeigen.
+
+@article{korrekt2021,
+  author  = {Smith, John and Doe, Jane},
+  title   = {Ein vollstaendig korrekter Eintrag},
+  journal = {Journal of Examples},
+  year    = {2021},
+  doi     = {10.1109/5.771073},
+  url     = {https://example.org/artikel}
+}
+
+@article{kaputte_doi,
+  author = {Mustermann, Max},
+  title  = {Falsches DOI-Format},
+  year   = {2020},
+  doi    = {12.3456/kein-gueltiges-praefix}
+}
+
+@book{kaputte_isbn10,
+  author    = {Mueller, Anna},
+  title     = {ISBN-10 mit falscher Pruefziffer},
+  publisher = {Beispielverlag},
+  year      = {2019},
+  isbn      = {0-306-40615-3}
+}
+
+@book{kaputte_isbn13,
+  author    = {Weber, Klaus},
+  title     = {ISBN-13 mit falscher Pruefziffer},
+  publisher = {Beispielverlag},
+  year      = {2018},
+  isbn      = {978-3-16-148410-5}
+}
+
+@misc{kaputte_url,
+  author = {Fischer, Lena},
+  title  = {Ungueltige URL},
+  year   = {2022},
+  url    = {htp:/example .org/pfad mit leerzeichen}
+}
+
+@article{mehrere_fehler,
+  author = {Klein, Tom},
+  title  = {Gleich mehrere Formatfehler in einem Eintrag},
+  year   = {2023},
+  doi    = {nonsense},
+  isbn   = {123-abc},
+  url    = {www.ohne-schema.de}
+}

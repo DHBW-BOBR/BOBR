@@ -1,0 +1,6 @@
+[flake8]
+# Abgestimmt auf black: E203 (Whitespace vor ':') und W503 (Zeilenumbruch vor
+# binärem Operator) widersprechen black und werden daher ignoriert.
+max-line-length = 100
+extend-ignore = E203, W503
+exclude = .venv, .git, __pycache__, build, dist
