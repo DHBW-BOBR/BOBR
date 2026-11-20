@@ -90,7 +90,16 @@ npm test
 Tests befinden sich in `frontend/src/tests/`:
 - `ImportView.test.js` — Dateiauswahl, Anzeige, Navigation (4 Tests)
 - `ResultsView.test.js` — Anzeige, Annehmen/Ablehnen, Leerzustand (5 Tests)
-- `api.test.js` — API-Aufrufe mit gemocktem axios (4 Tests)
+- `api.test.js` — API-Aufrufe mit gemocktem axios (8 Tests)
+- `UploadsView.test.js` — Liste der gespeicherten Prüfungen, erneut prüfen, löschen (8 Tests)
+- `UploadDetailView.test.js` — Findings je Status, Annehmen/Ablehnen, Reiter „Quellen“ (14 Tests)
+- `format.test.js` — Datums- und Statusanzeige (5 Tests)
+
+**Seiten im Frontend:**
+- `/` Import einer Datei, danach direkt die Prüfung
+- `/results` Ergebnisse der gerade gestarteten Prüfung
+- `/uploads` alle gespeicherten Prüfungen (öffnen, erneut prüfen, löschen)
+- `/uploads/:id` eine Prüfung mit offenen, angenommenen und abgelehnten Findings sowie den erkannten Quellen
 
 Danach:
 - Frontend: `http://localhost:5173`
