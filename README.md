@@ -50,15 +50,29 @@ flowchart LR
 
 **Voraussetzungen:** Python 3.11+, Node.js 18+
 
-**Backend starten:**
+**Backend starten** (aus dem Repo-Root, nicht aus `backend/`):
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # macOS
 .venv\Scripts\activate     # Windows
 pip install -r requirements.txt
-cd backend
-uvicorn main:app --reload
+uvicorn backend.app:app --reload --port 8000
 ```
+
+**Backend testen:**
+```bash
+pytest
+```
+
+**Datenbank:** Uploads und Prüfungen werden dauerhaft in einer SQLite-Datei gespeichert und sind nach einem Neustart wieder da. Die Datei wird beim ersten Request automatisch angelegt:
+
+| System | Standardpfad |
+|---|---|
+| Windows | `%LOCALAPPDATA%\BOBR\bobr.db` |
+| macOS | `~/Library/Application Support/BOBR/bobr.db` |
+| Linux | `$XDG_DATA_HOME/bobr/bobr.db` bzw. `~/.local/share/bobr/bobr.db` |
+
+Mit der Umgebungsvariable `BOBR_DB_PATH` lässt sich ein anderer Pfad setzen (z. B. für eine Demo-Datenbank). `backend/bobr.sqlite` ist nur die leere Schema-Vorlage und wird nie beschrieben. Zum kompletten Zurücksetzen das Backend stoppen und die Datei `bobr.db` löschen.
 
 **Frontend starten:**
 ```bash
@@ -82,6 +96,57 @@ Danach:
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:8000`
 - API-Dokumentation: `http://localhost:8000/docs`
+
+## Backend-API
+
+Jeder Upload ist eine eigene, gespeicherte Prüfung (Uploads werden nicht zusammengeführt). Basis-URL: `http://localhost:8000/api`.
+
+| Methode | Pfad | Zweck |
+|---|---|---|
+| POST | `/import/` | Datei (`.bib`, `.txt`, `.pdf`) hochladen und als neue Prüfung speichern |
+| POST | `/validate/` | Zuletzt gespeicherten Upload prüfen; mit `?upload_id=<id>` einen bestimmten |
+| POST | `/corrections/{id}/accept` | Finding annehmen |
+| POST | `/corrections/{id}/reject` | Finding ablehnen |
+| GET | `/uploads` | Alle gespeicherten Prüfungen, neueste zuerst |
+| GET | `/uploads/{id}` | Eine Prüfung mit allen Findings |
+| DELETE | `/uploads/{id}` | Eine Prüfung samt Quellen und Findings löschen |
+
+**`POST /import/`** (Formularfeld `file`), Antwort:
+```json
+{
+  "count": 2,
+  "filename": "literatur.bib",
+  "upload_id": 3,
+  "notice": "Diese Datei wurde bereits am 2026-11-20 09:15:02 (UTC) hochgeladen (Prüfung #1). Sie wurde trotzdem als neue Prüfung gespeichert.",
+  "duplicate_of": [1]
+}
+```
+`notice` ist `null` und `duplicate_of` leer, wenn die Datei (gleicher Inhalt) noch nicht gespeichert ist. Nicht lesbare Dateien: `422`, es wird nichts gespeichert.
+
+**`POST /validate/`**, Antwort: Liste der neu angelegten Findings:
+```json
+[{ "id": 12, "type": "fehler", "field": "Vollständigkeit", "message": "Pflichtfelder fehlen bei b1: publisher, year", "suggestion": "Fehlende Felder ergänzen" }]
+```
+`type` ist `fehler` oder `warnung`. Bereits angenommene oder abgelehnte Findings werden bei einer erneuten Prüfung nicht noch einmal geliefert; offene werden neu erzeugt (mit neuer `id`). Fehler: `400` (noch nichts importiert), `404` (unbekannte `upload_id`), `409` (gespeicherte Datei ergibt eine andere Anzahl an Quellen als beim Upload).
+
+**`POST /corrections/{id}/accept`** bzw. **`/reject`**, Antwort: `{"status": "accepted", "id": 12}`, `404` bei unbekannter ID.
+
+**`GET /uploads`**, Antwort:
+```json
+[{
+  "id": 3, "file_name": "literatur.bib", "format": "bib", "uploaded_at": "2026-11-20 09:20:11",
+  "last_check_started_at": "2026-11-20 09:20:15", "last_check_finished_at": "2026-11-20 09:20:16",
+  "reference_count": 2,
+  "finding_counts": { "open": 3, "accepted": 1, "rejected": 0 }
+}]
+```
+`last_check_started_at` ist `null`, wenn der Upload noch nie geprüft wurde. Ist nur der Start gesetzt, wurde die Prüfung abgebrochen.
+
+**`GET /uploads/{id}`**: dieselben Felder wie in der Liste, dazu `findings` im Format von `/validate/`, ergänzt um `status` (`open`, `accepted`, `rejected`). `404` bei unbekannter ID.
+
+**`DELETE /uploads/{id}`**, Antwort: `{"deleted": 3}`, `404` bei unbekannter ID. Andere Prüfungen bleiben erhalten.
+
+Alle Zeitangaben sind UTC im Format `YYYY-MM-DD HH:MM:SS`.
 
 ## Technologie
 
