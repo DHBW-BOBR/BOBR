@@ -88,8 +88,10 @@ npm test
 ```
 
 Tests befinden sich in `frontend/src/tests/`:
-- `ImportView.test.js` — Dateiauswahl, Anzeige, Navigation (4 Tests)
-- `ResultsView.test.js` — Anzeige, Annehmen/Ablehnen, Leerzustand (5 Tests)
+- `ImportView.test.js` — Dateiauswahl, Anzeige, Import → Prüfung → Ergebnisseite, Fehlermeldung (6 Tests)
+- `ResultsView.test.js` — Anzeige, Annehmen/Ablehnen, Leerzustand, Link zur gespeicherten Prüfung (8 Tests)
+
+Alle Frontend-Tests mocken die API (`vi.mock('../services/api.js')`), es muss also kein Backend laufen.
 - `api.test.js` — API-Aufrufe mit gemocktem axios (8 Tests)
 - `UploadsView.test.js` — Liste der gespeicherten Prüfungen, erneut prüfen, löschen (8 Tests)
 - `UploadDetailView.test.js` — Findings je Status, Annehmen/Ablehnen, Reiter „Quellen“ (14 Tests)
