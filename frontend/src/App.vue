@@ -6,6 +6,7 @@
         <div class="flex gap-6 text-sm">
           <router-link to="/" class="text-gray-600 hover:text-gray-900">Import</router-link>
           <router-link to="/results" class="text-gray-600 hover:text-gray-900">Ergebnisse</router-link>
+          <router-link to="/uploads" class="text-gray-600 hover:text-gray-900">Prüfungen</router-link>
         </div>
       </div>
     </nav>
