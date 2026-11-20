@@ -1,9 +1,17 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex items-center justify-between" :class="uploadId ? 'mb-2' : 'mb-8'">
       <h1 class="text-2xl font-semibold text-gray-900">Prüfergebnisse</h1>
       <span class="text-sm text-gray-500">{{ results.length }} Probleme gefunden</span>
     </div>
+
+    <router-link
+      v-if="uploadId"
+      :to="`/uploads/${uploadId}`"
+      class="inline-block mb-8 text-sm text-blue-600 hover:text-blue-700"
+    >
+      Alle Findings dieser Prüfung anzeigen →
+    </router-link>
 
     <div v-if="results.length === 0" class="text-center py-16 text-gray-400">
       Keine Probleme gefunden.
@@ -69,6 +77,13 @@ import { acceptCorrection, rejectCorrection } from '../services/api.js'
 
 /** @type {import('vue').Ref<Result[]>} Liste der gefundenen Probleme */
 const results = ref(history.state?.results ?? [])
+
+/**
+ * ID der gespeicherten Prüfung (vom Import mitgegeben). Damit verlinkt die Seite auf
+ * /uploads/:id, wo auch bereits entschiedene Findings sichtbar bleiben.
+ * @type {number|undefined}
+ */
+const uploadId = history.state?.uploadId
 
 /**
  * Nimmt einen Korrekturvorschlag an und entfernt ihn aus der Liste.

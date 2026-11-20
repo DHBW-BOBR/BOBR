@@ -73,14 +73,19 @@ import { importFile, runValidation } from '../services/api.js'
 const uploading = ref(false)
 const error = ref(null)
 
-/** Sendet die Datei ans Backend, startet die Validierung und navigiert zur Ergebnisseite. */
+/**
+ * Sendet die Datei ans Backend, startet die Validierung und navigiert zur Ergebnisseite.
+ * Die upload_id aus dem Import wird mitgegeben: So wird genau diese Datei geprüft und
+ * die Ergebnisseite kann auf die gespeicherte Prüfung (/uploads/:id) verlinken.
+ */
 const uploadFile = async () => {
   uploading.value = true
   error.value = null
   try {
-    await importFile(selectedFile.value)
-    const response = await runValidation()
-    router.push({ path: '/results', state: { results: response.data } })
+    const imported = await importFile(selectedFile.value)
+    const uploadId = imported?.data?.upload_id
+    const response = await runValidation(uploadId)
+    router.push({ path: '/results', state: { results: response.data, uploadId } })
   } catch (e) {
     error.value = e.response?.data?.detail ?? 'Fehler beim Upload'
   } finally {
