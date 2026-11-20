@@ -86,8 +86,6 @@ class Database:
             self._load_template()  # leere DB -> Struktur aus Lukas' Vorlage holen
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.project_id = self._ensure_project()
-        # Pro Upload gemerkt: entry_id (citekey bzw. refN) -> reference.id
-        self._ref_ids = {}
 
     def _has_schema(self):
         row = self.conn.execute(
@@ -132,13 +130,12 @@ class Database:
             ),
         )
         upload_id = cur.lastrowid
-        ref_ids = {}
 
         position = 1
         for entry in entries:
             data = json.dumps(to_csl(entry), ensure_ascii=False)
             citekey = entry.get("ID") if fmt == "bib" else None
-            ref_cur = self.conn.execute(
+            self.conn.execute(
                 """INSERT INTO reference
                    (upload_id, position, citekey, raw_text, data_original, data_current,
                     reference_type, doi_norm, title_norm, year, first_author_norm, updated_at)
@@ -158,11 +155,8 @@ class Database:
                     created,
                 ),
             )
-            if entry.get("ID"):
-                ref_ids[entry["ID"]] = ref_cur.lastrowid
             position += 1
 
-        self._ref_ids[upload_id] = ref_ids
         self.conn.commit()
         return upload_id
 
@@ -180,11 +174,16 @@ class Database:
         self.conn.execute(
             "DELETE FROM finding WHERE upload_id = ? AND status = 'open'", (upload_id,)
         )
-        ref_ids = self._ref_ids.get(upload_id, {})
+        resolve = self._reference_resolver(upload_id)
         saved = []
 
         for f in findings:
-            fingerprint = f"{f['rule_id']}:{f.get('field', '')}:{f.get('entry_id', '')}"
+            ref_id = resolve(f)
+            # Schema: Regel + Feld + IDs der betroffenen Quellen, z. B. "K05:year:17".
+            # reference.id ist stabil (auch nach Neustart) und eindeutig, auch bei
+            # doppelten citekeys; nur wenn keine Quelle gefunden wird, die entry_id.
+            source = ref_id if ref_id is not None else f.get("entry_id", "")
+            fingerprint = f"{f['rule_id']}:{f.get('field', '')}:{source}"
             cur = self.conn.execute(
                 """INSERT OR IGNORE INTO finding
                    (upload_id, rule_id, rule_version, category, severity, field,
@@ -207,8 +206,7 @@ class Database:
             finding_id = cur.lastrowid
 
             # Betroffene Quelle verknüpfen (n:m über finding_reference)
-            ref_id = ref_ids.get(f.get("entry_id"))
-            if ref_id:
+            if ref_id is not None:
                 self.conn.execute(
                     "INSERT OR IGNORE INTO finding_reference (finding_id, reference_id) "
                     "VALUES (?, ?)",
@@ -232,6 +230,29 @@ class Database:
         )
         self.conn.commit()
         return saved
+
+    def _reference_resolver(self, upload_id):
+        """Liefert eine Funktion Finding -> reference.id (oder None).
+
+        Die Zuordnung kommt aus der Tabelle ``reference``: bevorzugt über
+        ``position`` (eindeutig), sonst über citekey bzw. ``refN`` (erster Treffer).
+        """
+        rows = self.conn.execute(
+            "SELECT id, position, citekey FROM reference WHERE upload_id = ? "
+            "ORDER BY position",
+            (upload_id,),
+        ).fetchall()
+        by_position = {r["position"]: r["id"] for r in rows}
+        by_key = {}
+        for r in rows:
+            by_key.setdefault(r["citekey"] or f"ref{r['position']}", r["id"])
+
+        def resolve(finding):
+            if finding.get("position") is not None:
+                return by_position.get(finding["position"])
+            return by_key.get(finding.get("entry_id"))
+
+        return resolve
 
     def set_status(self, finding_id, status):
         self.conn.execute(

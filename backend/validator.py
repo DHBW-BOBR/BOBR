@@ -94,7 +94,7 @@ class Validator:
         findings = []
         next_id = 1
 
-        for entry in entries:
+        for position, entry in enumerate(entries, start=1):
             entry_id = entry.get("ID", "?")
 
             found = self._completeness(entry, entry_id)
@@ -105,6 +105,8 @@ class Validator:
 
             for finding in found:
                 finding["id"] = next_id
+                # Position des Eintrags (1-basiert) -> eindeutig, auch bei doppelten citekeys
+                finding["position"] = position
                 next_id += 1
                 findings.append(finding)
 
