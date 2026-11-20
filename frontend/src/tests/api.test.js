@@ -5,7 +5,15 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import axios from 'axios'
-import { importFile, runValidation, acceptCorrection, rejectCorrection } from '../services/api'
+import {
+  importFile,
+  runValidation,
+  acceptCorrection,
+  rejectCorrection,
+  listUploads,
+  getUpload,
+  deleteUpload,
+} from '../services/api'
 
 vi.mock('axios')
 
@@ -40,5 +48,37 @@ describe('api.js', () => {
     axios.post.mockResolvedValue({ data: {} })
     await rejectCorrection(2)
     expect(axios.post).toHaveBeenCalledWith('http://localhost:8000/api/corrections/2/reject')
+  })
+})
+
+describe('api.js – gespeicherte Prüfungen', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('runValidation mit uploadId sendet upload_id als Query-Parameter', async () => {
+    axios.post.mockResolvedValue({ data: [] })
+    await runValidation(5)
+    expect(axios.post).toHaveBeenCalledWith(
+      'http://localhost:8000/api/validate/',
+      null,
+      { params: { upload_id: 5 } }
+    )
+  })
+
+  it('listUploads ruft GET /api/uploads auf', async () => {
+    axios.get.mockResolvedValue({ data: [] })
+    await listUploads()
+    expect(axios.get).toHaveBeenCalledWith('http://localhost:8000/api/uploads')
+  })
+
+  it('getUpload ruft GET /api/uploads/{id} auf', async () => {
+    axios.get.mockResolvedValue({ data: {} })
+    await getUpload(3)
+    expect(axios.get).toHaveBeenCalledWith('http://localhost:8000/api/uploads/3')
+  })
+
+  it('deleteUpload ruft DELETE /api/uploads/{id} auf', async () => {
+    axios.delete.mockResolvedValue({ data: { deleted: 3 } })
+    await deleteUpload(3)
+    expect(axios.delete).toHaveBeenCalledWith('http://localhost:8000/api/uploads/3')
   })
 })

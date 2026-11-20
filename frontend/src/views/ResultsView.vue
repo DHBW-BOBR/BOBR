@@ -1,9 +1,17 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex items-center justify-between" :class="uploadId ? 'mb-2' : 'mb-8'">
       <h1 class="text-2xl font-semibold text-gray-900">Prüfergebnisse</h1>
       <span class="text-sm text-gray-500">{{ results.length }} Probleme gefunden</span>
     </div>
+
+    <router-link
+      v-if="uploadId"
+      :to="`/uploads/${uploadId}`"
+      class="inline-block mb-8 text-sm text-blue-600 hover:text-blue-700"
+    >
+      Alle Findings dieser Prüfung anzeigen →
+    </router-link>
 
     <div v-if="results.length === 0" class="text-center py-16 text-gray-400">
       Keine Probleme gefunden.
@@ -56,6 +64,7 @@
  * Ergebnisse werden nach Entscheidung aus der Liste entfernt.
  */
 import { ref } from 'vue'
+import { acceptCorrection, rejectCorrection } from '../services/api.js'
 
 /**
  * @typedef {Object} Result
@@ -67,17 +76,21 @@ import { ref } from 'vue'
  */
 
 /** @type {import('vue').Ref<Result[]>} Liste der gefundenen Probleme */
-const results = ref([
-  { id: 1, type: 'fehler', field: 'DOI', message: 'Ungültiges DOI-Format bei Müller (2023)', suggestion: '10.1000/xyz123' },
-  { id: 2, type: 'warnung', field: 'Autor', message: 'Inkonsistente Schreibweise: "Müller, Max" und "Max Müller"', suggestion: 'Müller, Max' },
-  { id: 3, type: 'fehler', field: 'Jahr', message: 'Fehlende Jahresangabe bei Schmidt et al.', suggestion: 'Pflichtfeld ergänzen' },
-])
+const results = ref(history.state?.results ?? [])
+
+/**
+ * ID der gespeicherten Prüfung (vom Import mitgegeben). Damit verlinkt die Seite auf
+ * /uploads/:id, wo auch bereits entschiedene Findings sichtbar bleiben.
+ * @type {number|undefined}
+ */
+const uploadId = history.state?.uploadId
 
 /**
  * Nimmt einen Korrekturvorschlag an und entfernt ihn aus der Liste.
  * @param {number} id - ID des Problems
  */
-const accept = (id) => {
+const accept = async (id) => {
+  await acceptCorrection(id)
   results.value = results.value.filter(r => r.id !== id)
 }
 
@@ -85,7 +98,8 @@ const accept = (id) => {
  * Lehnt einen Korrekturvorschlag ab und entfernt ihn aus der Liste.
  * @param {number} id - ID des Problems
  */
-const reject = (id) => {
+const reject = async (id) => {
+  await rejectCorrection(id)
   results.value = results.value.filter(r => r.id !== id)
 }
 </script>
