@@ -17,18 +17,19 @@ Bibliografische Daten gehen als **CSL-JSON** in ``reference.data_original`` /
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Lukas' leere DB; ihre Struktur wird in neue Datenbanken kopiert.
+# Lukas' leere DB; ihre Struktur wird in neue Datenbanken kopiert. Wird nur
+# gelesen, nie beschrieben.
 TEMPLATE_PATH = Path(__file__).with_name("bobr.sqlite")
 
-# Nach dem Merge auf main liegt Lukas' bobr.sqlite unter src/model/database/.
-# Dann die Zeile oben durch die folgende ersetzen und backend/bobr.sqlite löschen,
-# damit es nur noch *eine* Schema-Quelle gibt:
-# TEMPLATE_PATH = Path(__file__).resolve().parents[1] / "src" / "model" / "database" / "bobr.sqlite"
+# Umgebungsvariable, mit der sich der Speicherort der Datenbank überschreiben lässt.
+DB_PATH_ENV = "BOBR_DB_PATH"
 
 # Version der Prüfregeln; wandert mit in jedes Finding (Schema: finding.rule_version).
 RULE_VERSION = 1
@@ -38,12 +39,48 @@ def now():
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
+def default_db_path():
+    """Speicherort der Datenbankdatei; der Ordner wird bei Bedarf angelegt.
+
+    Reihenfolge: ``BOBR_DB_PATH``, sonst der übliche Ordner für Anwendungsdaten
+    des Betriebssystems (Windows ``%LOCALAPPDATA%\\BOBR\\bobr.db``, macOS
+    ``~/Library/Application Support/BOBR/bobr.db``, sonst
+    ``$XDG_DATA_HOME/bobr/bobr.db`` bzw. ``~/.local/share/bobr/bobr.db``).
+    """
+    override = os.environ.get(DB_PATH_ENV)
+    if override:
+        path = Path(override).expanduser()
+    elif sys.platform == "win32" and os.environ.get("LOCALAPPDATA"):
+        path = Path(os.environ["LOCALAPPDATA"]) / "BOBR" / "bobr.db"
+    elif sys.platform == "darwin":
+        path = Path.home() / "Library" / "Application Support" / "BOBR" / "bobr.db"
+    else:
+        base = os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share"
+        path = Path(base) / "bobr" / "bobr.db"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _is_template(path):
+    """True, wenn ``path`` auf die Schema-Vorlage zeigt."""
+    if str(path) == ":memory:":
+        return False
+    try:
+        return Path(path).resolve() == TEMPLATE_PATH.resolve()
+    except OSError:
+        return False
+
+
 class Database:
     """Dünne SQLite-Schicht auf Lukas' Schema. Standard ist eine In-Memory-DB
-    (nichts wird persistiert); ``Database("bobr.db")`` schreibt in eine Datei."""
+    (nichts wird persistiert); ``Database(default_db_path())`` schreibt in eine Datei."""
 
     def __init__(self, path=":memory:"):
-        self.conn = sqlite3.connect(path, check_same_thread=False)
+        if _is_template(path):
+            raise ValueError(
+                f"{TEMPLATE_PATH} ist die Schema-Vorlage und darf nicht beschrieben werden."
+            )
+        self.conn = sqlite3.connect(str(path), check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         if not self._has_schema():
             self._load_template()  # leere DB -> Struktur aus Lukas' Vorlage holen
@@ -60,7 +97,7 @@ class Database:
 
     def _load_template(self):
         # Vorlage nur lesen und ihre Struktur in die neue DB kopieren.
-        template = sqlite3.connect(str(TEMPLATE_PATH))
+        template = sqlite3.connect(TEMPLATE_PATH.resolve().as_uri() + "?mode=ro", uri=True)
         try:
             template.backup(self.conn)
         finally:
