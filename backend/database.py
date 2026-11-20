@@ -523,15 +523,21 @@ class Database:
         return result
 
     def get_findings(self, upload_id):
-        """Alle Findings eines Uploads inkl. Status und erstem Vorschlag.
+        """Alle Findings eines Uploads inkl. Status, erstem Vorschlag und Quellen.
 
-        Was: Liest ``finding`` und den Vorschlag mit dem kleinsten ``rank`` aus
-            ``suggestion``.
+        Was: Liest ``finding``, den Vorschlag mit dem kleinsten ``rank`` aus
+            ``suggestion`` und je Finding die IDs der betroffenen Quellen
+            (``reference_ids`` aus ``finding_reference``, aufsteigend sortiert).
         Warum: Damit lässt sich eine gespeicherte Prüfung im bisherigen
             Frontend-Format wieder anzeigen; der Status zeigt, was schon
-            entschieden ist.
-        Alternativen: Alle Vorschläge als Liste liefern; aktuell gibt es nur
-            einen Vorschlag je Finding, das Frontend zeigt auch nur einen.
+            entschieden ist. ``reference_ids`` verbindet ein Finding mit den
+            Quellen aus ``get_references``, damit das Frontend je Quelle ihre
+            Findings zeigen kann.
+        Alternativen:
+            * Alle Vorschläge als Liste liefern; aktuell gibt es nur einen
+              Vorschlag je Finding, das Frontend zeigt auch nur einen.
+            * Eine einzelne ``reference_id`` statt einer Liste; das Schema
+              erlaubt aber mehrere Quellen je Finding (z. B. bei Duplikaten).
         """
         rows = self.conn.execute(
             """SELECT f.id, f.rule_id, f.category, f.severity, f.field, f.message,
@@ -543,7 +549,65 @@ class Database:
                ORDER BY f.id""",
             (upload_id,),
         ).fetchall()
-        return [dict(r) for r in rows]
+        links = {}
+        for link in self.conn.execute(
+            """SELECT fr.finding_id, fr.reference_id
+               FROM finding_reference fr JOIN finding f ON f.id = fr.finding_id
+               WHERE f.upload_id = ?
+               ORDER BY fr.reference_id""",
+            (upload_id,),
+        ):
+            links.setdefault(link["finding_id"], []).append(link["reference_id"])
+        return [{**dict(r), "reference_ids": links.get(r["id"], [])} for r in rows]
+
+    def get_references(self, upload_id):
+        """Die erkannten Quellen eines Uploads in Dateireihenfolge.
+
+        Was: Je ``reference``-Zeile ``id``, ``position``, ``citekey``, ``type``
+            (BibTeX-Typ), dazu aus dem CSL-JSON in ``data_current`` ``title``,
+            ``authors`` (als „Nachname, Vorname“), ``container`` (Zeitschrift
+            bzw. Tagungsband), ``publisher``, ``doi``, ``isbn``, ``url`` und das
+            Jahr aus der abgeleiteten Spalte ``year``. ``raw_text`` ist der
+            Originaltext der Quelle bei .txt/.pdf, bei .bib ``None``.
+        Warum: Der Nutzer soll sehen, was der Importer aus seiner Datei erkannt
+            hat, auch Quellen ohne Finding. Gerade bei .txt/.pdf ist die
+            Erkennung heuristisch; nur so fällt auf, wenn eine Quelle falsch
+            zerlegt wurde. ``data_current`` statt ``data_original``, damit später
+            übernommene Korrekturen sichtbar sind. ``raw_text`` ist bei .bib
+            ``None``, weil dort (mangels Originaltext je Eintrag) nur das
+            CSL-JSON in der Spalte steht, was für Nutzer nichts aussagt.
+        Alternativen: Das CSL-JSON unverändert ausliefern; verworfen, weil das
+            Frontend dann CSL kennen müsste (z. B. ``issued.date-parts``).
+        """
+        rows = self.conn.execute(
+            """SELECT id, position, citekey, reference_type, raw_text,
+                      data_original, data_current, year
+               FROM reference WHERE upload_id = ? ORDER BY position""",
+            (upload_id,),
+        ).fetchall()
+        result = []
+        for r in rows:
+            csl = json.loads(r["data_current"])
+            result.append(
+                {
+                    "id": r["id"],
+                    "position": r["position"],
+                    "citekey": r["citekey"],
+                    "type": r["reference_type"],
+                    "title": csl.get("title"),
+                    "authors": [format_author(a) for a in csl.get("author", [])],
+                    "year": r["year"],
+                    "container": csl.get("container-title"),
+                    "publisher": csl.get("publisher"),
+                    "doi": csl.get("DOI"),
+                    "isbn": csl.get("ISBN"),
+                    "url": csl.get("URL"),
+                    "raw_text": (
+                        None if r["raw_text"] == r["data_original"] else r["raw_text"]
+                    ),
+                }
+            )
+        return result
 
     def delete_upload(self, upload_id):
         """Löscht einen Upload samt Quellen, Findings und Vorschlägen.
@@ -699,6 +763,21 @@ def csl_authors(author):
             else:
                 authors.append({"family": name})
     return authors
+
+
+def format_author(author):
+    """Ein CSL-Autor als Anzeigetext.
+
+    Was: ``{"family": "Smith", "given": "John"}`` -> ``"Smith, John"``; ohne
+        Vornamen nur der Nachname.
+    Warum: Das Frontend soll Autoren nur anzeigen, nicht CSL zerlegen müssen.
+        „Nachname, Vorname“ ist die übliche Schreibweise in Literaturlisten.
+    Alternativen: Das CSL-Objekt durchreichen; verschiebt die Formatierung in
+        jede Oberfläche, die die Daten anzeigt.
+    """
+    family = author.get("family", "")
+    given = author.get("given")
+    return f"{family}, {given}" if given else family
 
 
 # ---------------------------------------------------------------------------

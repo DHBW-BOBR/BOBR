@@ -108,7 +108,7 @@ Jeder Upload ist eine eigene, gespeicherte Prüfung (Uploads werden nicht zusamm
 | POST | `/corrections/{id}/accept` | Finding annehmen |
 | POST | `/corrections/{id}/reject` | Finding ablehnen |
 | GET | `/uploads` | Alle gespeicherten Prüfungen, neueste zuerst |
-| GET | `/uploads/{id}` | Eine Prüfung mit allen Findings |
+| GET | `/uploads/{id}` | Eine Prüfung mit allen Findings und allen erkannten Quellen |
 | DELETE | `/uploads/{id}` | Eine Prüfung samt Quellen und Findings löschen |
 
 **`POST /import/`** (Formularfeld `file`), Antwort:
@@ -142,7 +142,20 @@ Jeder Upload ist eine eigene, gespeicherte Prüfung (Uploads werden nicht zusamm
 ```
 `last_check_started_at` ist `null`, wenn der Upload noch nie geprüft wurde. Ist nur der Start gesetzt, wurde die Prüfung abgebrochen.
 
-**`GET /uploads/{id}`**: dieselben Felder wie in der Liste, dazu `findings` im Format von `/validate/`, ergänzt um `status` (`open`, `accepted`, `rejected`). `404` bei unbekannter ID.
+**`GET /uploads/{id}`**: dieselben Felder wie in der Liste, dazu:
+- `findings` im Format von `/validate/`, ergänzt um `status` (`open`, `accepted`, `rejected`) und `reference_ids` (IDs der betroffenen Quellen),
+- `references`: alle erkannten Quellen in Dateireihenfolge.
+
+```json
+"references": [{
+  "id": 17, "position": 1, "citekey": "a1", "type": "article",
+  "title": "Ein Titel", "authors": ["Smith, John", "Doe, Jane"], "year": 2020,
+  "container": "Journal of Examples", "publisher": null,
+  "doi": "10.1000/abc", "isbn": null, "url": null,
+  "raw_text": null
+}]
+```
+`raw_text` ist der Originaltext der Quelle bei `.txt`/`.pdf` (zeigt, was der Importer zerlegt hat), bei `.bib` `null`. `404` bei unbekannter ID.
 
 **`DELETE /uploads/{id}`**, Antwort: `{"deleted": 3}`, `404` bei unbekannter ID. Andere Prüfungen bleiben erhalten.
 

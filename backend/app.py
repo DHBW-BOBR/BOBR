@@ -266,14 +266,24 @@ async def list_uploads(db: Database = Depends(get_db)):
 
 @app.get("/api/uploads/{upload_id}")
 async def get_upload(upload_id: int, db: Database = Depends(get_db)):
-    """Eine gespeicherte Prüfung mit allen Findings.
+    """Eine gespeicherte Prüfung mit allen Findings und allen erkannten Quellen.
 
-    Was: Dieselben Metadaten wie in der Liste plus ``findings`` im bisherigen
-        Frontend-Format, ergänzt um ``status``. 404 bei unbekannter ID.
+    Was: Dieselben Metadaten wie in der Liste plus
+        ``findings`` im bisherigen Frontend-Format, ergänzt um ``status`` und
+        ``reference_ids`` (betroffene Quellen), sowie ``references``: alle
+        erkannten Quellen in Dateireihenfolge (siehe
+        ``Database.get_references``). 404 bei unbekannter ID.
     Warum: Das Frontend kann die Ergebnisansicht ohne erneute Prüfung wieder
-        aufbauen; ``status`` zeigt, was bereits angenommen/abgelehnt ist.
-    Alternativen: Nur offene Findings liefern; verworfen, weil der Nutzer auch
-        seine bisherigen Entscheidungen sehen soll.
+        aufbauen; ``status`` zeigt, was bereits angenommen/abgelehnt ist. Über
+        ``references`` sieht der Nutzer, was aus seiner Datei erkannt wurde,
+        auch Quellen ohne Finding; ``reference_ids`` ordnet die Findings den
+        Quellen zu. Beides kommt nur hinzu, bestehende Felder bleiben gleich.
+    Alternativen:
+        * Nur offene Findings liefern; verworfen, weil der Nutzer auch seine
+          bisherigen Entscheidungen sehen soll.
+        * Eigener Endpunkt ``/api/uploads/{id}/references``; verworfen, weil
+          die Detailseite beides braucht und ein Request einfacher ist. Bei
+          sehr großen Literaturlisten ließe sich das später noch trennen.
     """
     summary = db.list_uploads(upload_id)
     if not summary:
@@ -282,8 +292,10 @@ async def get_upload(upload_id: int, db: Database = Depends(get_db)):
         )
     result = summary[0]
     result["findings"] = [
-        {**to_frontend(f), "status": f["status"]} for f in db.get_findings(upload_id)
+        {**to_frontend(f), "status": f["status"], "reference_ids": f["reference_ids"]}
+        for f in db.get_findings(upload_id)
     ]
+    result["references"] = db.get_references(upload_id)
     return result
 
 

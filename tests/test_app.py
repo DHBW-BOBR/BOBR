@@ -206,9 +206,15 @@ def test_get_upload_detail(client):
     detail = r.json()
     assert detail["file_name"] == "r.bib"
     assert detail["findings"]
-    assert {"id", "type", "field", "message", "suggestion", "status"} == set(
-        detail["findings"][0]
-    )
+    assert {
+        "id",
+        "type",
+        "field",
+        "message",
+        "suggestion",
+        "status",
+        "reference_ids",
+    } == set(detail["findings"][0])
     assert client.get("/api/uploads/9999").status_code == 404
 
 
@@ -224,3 +230,39 @@ def test_delete_upload(client):
     assert [i["id"] for i in client.get("/api/uploads").json()] == [keep]
     # ohne Parameter wird jetzt wieder der verbleibende Upload geprüft
     assert client.post("/api/validate/").status_code == 200
+
+
+# ---------------------------------------------------------------- Quellen
+
+
+def test_get_upload_lists_references(client):
+    upload_id = upload(client)["upload_id"]
+    refs = client.get(f"/api/uploads/{upload_id}").json()["references"]
+    assert [r["position"] for r in refs] == [1, 2]
+    first = refs[0]
+    assert first["citekey"] == "a1"
+    assert first["type"] == "article"
+    assert first["title"] == "T"
+    assert first["authors"] == ["Smith, John"]
+    assert first["year"] == 2020
+    assert first["raw_text"] is None  # .bib: kein Originaltext je Eintrag
+
+
+def test_findings_point_to_their_reference(client):
+    upload_id = upload(client)["upload_id"]
+    client.post("/api/validate/")
+    detail = client.get(f"/api/uploads/{upload_id}").json()
+    by_key = {r["citekey"]: r["id"] for r in detail["references"]}
+    # b1 fehlt der publisher/year -> Finding hängt an der Quelle b1
+    finding = next(f for f in detail["findings"] if "b1" in f["message"])
+    assert finding["reference_ids"] == [by_key["b1"]]
+
+
+def test_txt_references_keep_raw_text(client):
+    txt = "[1] Smith, John. 2020. A Great Paper. doi:10.1000/abc\n[2] Doe, Jane. 2019."
+    upload_id = upload(client, content=txt.encode(), name="r.txt")["upload_id"]
+    refs = client.get(f"/api/uploads/{upload_id}").json()["references"]
+    assert len(refs) == 2
+    assert refs[0]["citekey"] is None
+    assert refs[0]["raw_text"].startswith("Smith, John. 2020")
+    assert refs[0]["doi"] == "10.1000/abc"

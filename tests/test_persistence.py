@@ -191,3 +191,38 @@ def test_file_is_valid_sqlite_after_writes(tmp_path):
     conn = sqlite3.connect(path)
     assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
     conn.close()
+
+
+# ---------------------------------------------------------------- Quellen lesen
+
+
+def test_get_references_survives_restart(tmp_path):
+    path = tmp_path / "bobr.db"
+    first = Database(path)
+    upload_id = first.save_upload("r.bib", BIB, "bib", Importer().load("r.bib", BIB))
+    first.conn.close()
+
+    refs = Database(path).get_references(upload_id)
+    assert [(r["position"], r["citekey"], r["title"]) for r in refs] == [
+        (1, "a1", "First"),
+        (2, "b1", "Second"),
+    ]
+    assert refs[1]["authors"] == ["Doe, Jane"]
+    assert refs[1]["year"] is None
+
+
+def test_duplicate_citekeys_have_separate_references():
+    bib = (
+        b"@misc{a1, title={Erster}, author={X}, year={2020}}\n"
+        b"@misc{a1, title={Zweiter}, author={Y}}"
+    )
+    db = Database()
+    entries = Importer().load("r.bib", bib)
+    upload_id = db.save_upload("r.bib", bib, "bib", entries)
+    db.save_findings(upload_id, Validator(use_crossref=False).check(entries))
+
+    refs = db.get_references(upload_id)
+    assert [r["title"] for r in refs] == ["Erster", "Zweiter"]
+    findings = db.get_findings(upload_id)
+    # Nur der zweite Eintrag hat kein Jahr -> genau ein Finding an Quelle 2
+    assert [f["reference_ids"] for f in findings] == [[refs[1]["id"]]]
