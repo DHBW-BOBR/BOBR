@@ -38,7 +38,67 @@
         </button>
       </div>
 
-      <div v-if="visibleFindings.length === 0" class="text-center py-16 text-gray-400">
+      <template v-if="filter === 'sources'">
+        <div v-if="references.length === 0" class="text-center py-16 text-gray-400">
+          {{ emptyText }}
+        </div>
+
+        <div v-else class="space-y-4">
+          <div
+            v-for="source in references"
+            :key="source.id"
+            class="source bg-white border border-gray-200 rounded-lg p-5"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <span class="text-xs font-medium px-2 py-1 rounded-full mr-2 bg-gray-100 text-gray-600">
+                  #{{ source.position }}
+                </span>
+                <span v-if="source.type" class="text-xs font-medium px-2 py-1 rounded-full mr-2 bg-gray-100 text-gray-600">
+                  {{ source.type }}
+                </span>
+                <span v-if="source.citekey" class="text-sm text-gray-500">{{ source.citekey }}</span>
+                <p class="mt-2 text-sm font-medium" :class="source.title ? 'text-gray-900' : 'text-gray-400 italic'">
+                  {{ source.title || 'Kein Titel erkannt' }}
+                </p>
+                <p class="mt-1 text-sm text-gray-600">{{ sourceDetails(source) }}</p>
+                <p v-if="sourceIdentifiers(source)" class="mt-1 text-sm text-gray-500 break-all">
+                  {{ sourceIdentifiers(source) }}
+                </p>
+                <p v-if="source.raw_text" class="raw-text mt-2 text-xs text-gray-400 break-words">
+                  Erkannt aus: {{ source.raw_text }}
+                </p>
+                <ul v-if="findingsBySource[source.id]" class="mt-3 space-y-1">
+                  <li
+                    v-for="finding in findingsBySource[source.id]"
+                    :key="finding.id"
+                    class="text-sm text-gray-600"
+                  >
+                    <span class="text-xs font-medium px-2 py-0.5 rounded-full mr-2"
+                      :class="{
+                        'bg-red-100 text-red-700': finding.type === 'fehler',
+                        'bg-yellow-100 text-yellow-700': finding.type === 'warnung',
+                      }"
+                    >
+                      {{ finding.type }}
+                    </span>
+                    {{ finding.message }}
+                    <span class="text-gray-400">({{ STATUS_LABEL[finding.status] }})</span>
+                  </li>
+                </ul>
+              </div>
+              <span
+                class="source-status text-xs font-medium px-2 py-1 rounded-full shrink-0"
+                :class="sourceStatus(source).classes"
+              >
+                {{ sourceStatus(source).label }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <div v-else-if="visibleFindings.length === 0" class="text-center py-16 text-gray-400">
         {{ emptyText }}
       </div>
 
@@ -101,6 +161,12 @@
  * Alternativen: ResultsView erweitern; verworfen, weil ResultsView die Ergebnisse direkt
  * nach dem Import zeigt (entschiedene verschwinden dort) und Mariekes Ablauf so unverändert bleibt.
  * Entschiedene Findings werden hier nicht entfernt, sondern wandern in den passenden Filter.
+ *
+ * Reiter "Quellen": zeigt jede erkannte Quelle der Datei mit ihren Findings.
+ * Warum: Der Nutzer soll sehen, was der Importer aus seiner Datei erkannt hat, auch Quellen
+ * ohne Probleme; bei .txt/.pdf fällt so auf, wenn eine Quelle falsch zerlegt wurde.
+ * Alternativen: Eigene Seite je Quelle oder Quellen als Liste über den Findings; verworfen,
+ * weil ein weiterer Reiter in den vorhandenen Filtern ohne neue Navigation auskommt.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -117,6 +183,24 @@ const route = useRoute()
  * @property {string} message - Beschreibung des Problems
  * @property {string|null} suggestion - Korrekturvorschlag
  * @property {'open'|'accepted'|'rejected'} status - Entscheidung des Nutzers
+ * @property {number[]} reference_ids - IDs der betroffenen Quellen
+ */
+
+/**
+ * @typedef {Object} Source
+ * @property {number} id - ID der Quelle (reference.id)
+ * @property {number} position - Position in der Datei (1, 2, 3 …)
+ * @property {string|null} citekey - BibTeX-Schlüssel, bei .txt/.pdf leer
+ * @property {string|null} type - BibTeX-Typ (article, book …)
+ * @property {string|null} title - Erkannter Titel
+ * @property {string[]} authors - Autoren als "Nachname, Vorname"
+ * @property {number|null} year - Erkanntes Jahr
+ * @property {string|null} container - Zeitschrift bzw. Tagungsband
+ * @property {string|null} publisher - Verlag
+ * @property {string|null} doi
+ * @property {string|null} isbn
+ * @property {string|null} url
+ * @property {string|null} raw_text - Originaltext bei .txt/.pdf, bei .bib leer
  */
 
 /** Filter oberhalb der Liste; "open" ist voreingestellt, weil dort noch Arbeit wartet. */
@@ -125,7 +209,11 @@ const tabs = [
   { value: 'accepted', label: 'Angenommen' },
   { value: 'rejected', label: 'Abgelehnt' },
   { value: 'all', label: 'Alle' },
+  { value: 'sources', label: 'Quellen' },
 ]
+
+/** Anzeigetext je Status eines Findings. */
+const STATUS_LABEL = { open: 'offen', accepted: 'angenommen', rejected: 'abgelehnt' }
 
 /** @type {import('vue').Ref<Object|null>} Metadaten der Prüfung inkl. findings */
 const upload = ref(null)
@@ -133,7 +221,10 @@ const upload = ref(null)
 /** @type {import('vue').Ref<Finding[]>} Alle Findings dieser Prüfung */
 const findings = ref([])
 
-/** @type {import('vue').Ref<'open'|'accepted'|'rejected'|'all'>} Aktiver Filter */
+/** @type {import('vue').Ref<Source[]>} Alle erkannten Quellen dieser Prüfung */
+const references = ref([])
+
+/** @type {import('vue').Ref<'open'|'accepted'|'rejected'|'all'|'sources'>} Aktiver Reiter */
 const filter = ref('open')
 
 const loading = ref(true)
@@ -146,6 +237,7 @@ const counts = computed(() => ({
   accepted: findings.value.filter(f => f.status === 'accepted').length,
   rejected: findings.value.filter(f => f.status === 'rejected').length,
   all: findings.value.length,
+  sources: references.value.length,
 }))
 
 /** Findings, die zum aktiven Filter passen. */
@@ -153,21 +245,70 @@ const visibleFindings = computed(() =>
   filter.value === 'all' ? findings.value : findings.value.filter(f => f.status === filter.value)
 )
 
-/** Hinweis, wenn im aktiven Filter nichts steht. */
+/** Hinweis, wenn im aktiven Reiter nichts steht. */
 const emptyText = computed(() => ({
   open: 'Keine offenen Probleme.',
   accepted: 'Noch nichts angenommen.',
   rejected: 'Noch nichts abgelehnt.',
   all: 'Keine Probleme gefunden.',
+  sources: 'In dieser Datei wurden keine Quellen erkannt.',
 }[filter.value]))
 
-/** Lädt die Prüfung mit allen Findings vom Backend. */
+/**
+ * Findings je Quelle: { [reference.id]: Finding[] }.
+ * Ein Finding kann mehrere Quellen betreffen und steht dann bei jeder.
+ */
+const findingsBySource = computed(() => {
+  const map = {}
+  for (const finding of findings.value) {
+    for (const id of finding.reference_ids ?? []) {
+      (map[id] ??= []).push(finding)
+    }
+  }
+  return map
+})
+
+/**
+ * Zweite Zeile einer Quelle: Autoren · Jahr · Zeitschrift · Verlag (nur was erkannt wurde).
+ * @param {Source} source
+ * @returns {string}
+ */
+const sourceDetails = (source) =>
+  [source.authors.join('; '), source.year, source.container, source.publisher]
+    .filter(Boolean)
+    .join(' · ') || 'Keine Autoren, kein Jahr erkannt'
+
+/**
+ * Kennungen einer Quelle: DOI · ISBN · URL, leer wenn keine erkannt wurde.
+ * @param {Source} source
+ * @returns {string}
+ */
+const sourceIdentifiers = (source) =>
+  [source.doi && `DOI ${source.doi}`, source.isbn && `ISBN ${source.isbn}`, source.url]
+    .filter(Boolean)
+    .join(' · ')
+
+/**
+ * Badge rechts an einer Quelle: "in Ordnung" ohne Findings, sonst wie viele noch offen sind.
+ * @param {Source} source
+ * @returns {{label: string, classes: string}}
+ */
+const sourceStatus = (source) => {
+  const list = findingsBySource.value[source.id] ?? []
+  const open = list.filter(f => f.status === 'open').length
+  if (list.length === 0) return { label: 'in Ordnung', classes: 'bg-green-100 text-green-700' }
+  if (open > 0) return { label: `${open} offen`, classes: 'bg-blue-100 text-blue-700' }
+  return { label: 'alles entschieden', classes: 'bg-gray-100 text-gray-600' }
+}
+
+/** Lädt die Prüfung mit allen Findings und Quellen vom Backend. */
 const load = async () => {
   error.value = null
   try {
     const response = await getUpload(route.params.id)
     upload.value = response.data
     findings.value = response.data.findings
+    references.value = response.data.references ?? []
   } catch (e) {
     upload.value = null
     error.value = e.response?.status === 404
