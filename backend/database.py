@@ -73,7 +73,8 @@ def _is_template(path):
 
 class Database:
     """Dünne SQLite-Schicht auf Lukas' Schema. Standard ist eine In-Memory-DB
-    (nichts wird persistiert); ``Database(default_db_path())`` schreibt in eine Datei."""
+    (nichts wird persistiert); ``Database(default_db_path())`` schreibt in eine Datei.
+    """
 
     def __init__(self, path=":memory:"):
         if _is_template(path):
@@ -95,7 +96,9 @@ class Database:
 
     def _load_template(self):
         # Vorlage nur lesen und ihre Struktur in die neue DB kopieren.
-        template = sqlite3.connect(TEMPLATE_PATH.resolve().as_uri() + "?mode=ro", uri=True)
+        template = sqlite3.connect(
+            TEMPLATE_PATH.resolve().as_uri() + "?mode=ro", uri=True
+        )
         try:
             template.backup(self.conn)
         finally:
@@ -123,7 +126,7 @@ class Database:
             (
                 self.project_id,
                 file_name,
-                hashlib.sha256(content).hexdigest(),
+                file_hash(content),
                 content,
                 fmt,
                 created,
@@ -255,11 +258,103 @@ class Database:
         return resolve
 
     def set_status(self, finding_id, status):
-        self.conn.execute(
+        cur = self.conn.execute(
             "UPDATE finding SET status = ?, decided_at = ? WHERE id = ?",
             (status, now(), finding_id),
         )
         self.conn.commit()
+        return cur.rowcount > 0
+
+    # ------------------------------------------------------------------ Lesen
+
+    def get_upload(self, upload_id):
+        row = self.conn.execute(
+            "SELECT * FROM upload WHERE id = ? AND project_id = ?",
+            (upload_id, self.project_id),
+        ).fetchone()
+        return dict(row) if row else None
+
+    def latest_upload_id(self):
+        row = self.conn.execute(
+            "SELECT MAX(id) AS id FROM upload WHERE project_id = ?",
+            (self.project_id,),
+        ).fetchone()
+        return row["id"]
+
+    def reference_count(self, upload_id):
+        return self.conn.execute(
+            "SELECT COUNT(*) FROM reference WHERE upload_id = ?", (upload_id,)
+        ).fetchone()[0]
+
+    def find_uploads_by_hash(self, digest):
+        rows = self.conn.execute(
+            "SELECT id, file_name, uploaded_at FROM upload "
+            "WHERE project_id = ? AND file_hash = ? ORDER BY id",
+            (self.project_id, digest),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def list_uploads(self, upload_id=None):
+        """Übersicht der Uploads, neueste zuerst (optional nur einer)."""
+        sql = """
+            SELECT u.id, u.file_name, u.format, u.uploaded_at,
+                   u.last_check_started_at, u.last_check_finished_at,
+                   (SELECT COUNT(*) FROM reference r WHERE r.upload_id = u.id)
+                       AS reference_count,
+                   (SELECT COUNT(*) FROM finding f
+                     WHERE f.upload_id = u.id AND f.status = 'open') AS n_open,
+                   (SELECT COUNT(*) FROM finding f
+                     WHERE f.upload_id = u.id AND f.status = 'accepted') AS n_accepted,
+                   (SELECT COUNT(*) FROM finding f
+                     WHERE f.upload_id = u.id AND f.status = 'rejected') AS n_rejected
+            FROM upload u
+            WHERE u.project_id = ?"""
+        params = [self.project_id]
+        if upload_id is not None:
+            sql += " AND u.id = ?"
+            params.append(upload_id)
+        sql += " ORDER BY u.id DESC"
+
+        result = []
+        for r in self.conn.execute(sql, params).fetchall():
+            row = dict(r)
+            row["finding_counts"] = {
+                "open": row.pop("n_open"),
+                "accepted": row.pop("n_accepted"),
+                "rejected": row.pop("n_rejected"),
+            }
+            result.append(row)
+        return result
+
+    def get_findings(self, upload_id):
+        """Alle Findings eines Uploads inkl. Status und erstem Vorschlag."""
+        rows = self.conn.execute(
+            """SELECT f.id, f.rule_id, f.category, f.severity, f.field, f.message,
+                      f.status, f.decided_at,
+                      (SELECT s.label FROM suggestion s WHERE s.finding_id = f.id
+                        ORDER BY s.rank, s.id LIMIT 1) AS suggestion
+               FROM finding f
+               WHERE f.upload_id = ?
+               ORDER BY f.id""",
+            (upload_id,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def delete_upload(self, upload_id):
+        """Löscht einen Upload samt Quellen, Findings und Vorschlägen."""
+        cur = self.conn.execute(
+            "DELETE FROM upload WHERE id = ? AND project_id = ?",
+            (upload_id, self.project_id),
+        )
+        self.conn.commit()
+        if cur.rowcount:
+            # Freien Platz an das Dateisystem zurückgeben.
+            self.conn.execute("VACUUM")
+        return cur.rowcount > 0
+
+
+def file_hash(content):
+    return hashlib.sha256(content).hexdigest()
 
 
 def parse_changes(suggestion):
